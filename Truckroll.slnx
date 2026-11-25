@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Truckroll.Api/Truckroll.Api.csproj" />
+    <Project Path="src/Truckroll.AppHost/Truckroll.AppHost.csproj" />
+    <Project Path="src/Truckroll.ServiceDefaults/Truckroll.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Truckroll.Api.Tests/Truckroll.Api.Tests.csproj" />
+  </Folder>
+</Solution>
