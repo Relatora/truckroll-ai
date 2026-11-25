@@ -30,7 +30,18 @@ var api = builder.AddDotnetProject("api", "../Truckroll.Api/Truckroll.Api.csproj
     .WithReference(database).WaitFor(database)
     .WithReference(redis).WaitFor(redis)
     .WithReference(ollama)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    // A dashboard button that rebuilds the demo data around today (the board is date-relative).
+    .WithHttpCommand(
+        path: "/api/dev/reset-demo",
+        displayName: "Reset demo data",
+        commandOptions: new HttpCommandOptions
+        {
+            Method = HttpMethod.Post,
+            Description = "Drop the database and re-seed Kestrel Home Comfort for today.",
+            ConfirmationMessage = "Wipe the database and re-seed the demo data?",
+            IconName = "ArrowCounterclockwise",
+        });
 
 // Next.js rewrites /api and /hubs to API_URL, so the browser only ever sees one origin and
 // the sign-in cookie needs no CORS rules (ADR-006).

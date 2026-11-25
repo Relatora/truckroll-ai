@@ -23,8 +23,10 @@ namespace Truckroll.Api.Tests.Infrastructure;
 /// </remarks>
 public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    // Root, so tests that need a database of their own (the seeding test) can create one.
     private readonly MySqlContainer _mysql = new MySqlBuilder("mysql:8.4")
         .WithDatabase("truckroll")
+        .WithUsername("root")
         .Build();
 
     private readonly RedisContainer _redis = new RedisBuilder("redis:8.12").Build();
@@ -33,6 +35,15 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
     {
         await Task.WhenAll(_mysql.StartAsync(), _redis.StartAsync());
     }
+
+    /// <summary>A connection string to another, empty database on the same MySQL server.</summary>
+    public string ConnectionStringFor(string database) =>
+        new MySqlConnector.MySqlConnectionStringBuilder(_mysql.GetConnectionString())
+        {
+            Database = database,
+            AllowUserVariables = true,
+            UseAffectedRows = false,
+        }.ConnectionString;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
