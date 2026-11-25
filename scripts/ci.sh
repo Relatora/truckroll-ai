@@ -24,7 +24,7 @@ step() {
 }
 
 if $run_dotnet; then
-  step 'dotnet format' dotnet format Truckroll.slnx --verify-no-changes --verbosity quiet
+  step 'dotnet format' dotnet format Truckroll.slnx --verify-no-changes --verbosity quiet --exclude src/Truckroll.Data/Migrations
   step 'dotnet build' dotnet build Truckroll.slnx --configuration Release --nologo --verbosity quiet
   step 'dotnet test' dotnet test --solution Truckroll.slnx --configuration Release --no-build
 fi
