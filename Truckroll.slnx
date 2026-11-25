@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Truckroll.Api/Truckroll.Api.csproj" />
     <Project Path="src/Truckroll.AppHost/Truckroll.AppHost.csproj" />
+    <Project Path="src/Truckroll.Data/Truckroll.Data.csproj" />
     <Project Path="src/Truckroll.ServiceDefaults/Truckroll.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">

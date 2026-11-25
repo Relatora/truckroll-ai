@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The data model: entities, EF Core mapping and migrations. A library rather than part of the
+    API so the seed generator and the eval tool can use it without pulling in ASP.NET Core.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microting.EntityFrameworkCore.MySql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Truckroll.Api.Tests" />
+  </ItemGroup>
+
+</Project>
