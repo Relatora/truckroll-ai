@@ -1,4 +1,5 @@
 using Truckroll.Api.Data;
+using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Status;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,7 @@ if (app.Environment.IsDevelopment())
 // Every endpoint lives under /api, which is the prefix the Next.js app rewrites to us.
 var api = app.MapGroup("/api");
 api.MapStatusEndpoints();
+api.MapDevEndpoints(app.Environment);
 
 app.MapDefaultEndpoints();
 

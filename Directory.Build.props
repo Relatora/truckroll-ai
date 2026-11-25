@@ -14,7 +14,11 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <!-- XML doc comments are part of the code's documentation, so the compiler checks them. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Missing XML comments on every public member would be noise; malformed ones are still errors. -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!--
+      Missing XML comments on every public member would be noise (CS1591), and so would
+      documenting every record parameter once one needs explaining (CS1573). Malformed or
+      wrong comments are still errors.
+    -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 </Project>

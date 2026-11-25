@@ -11,6 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The demo knowledge base and call transcripts, as readable markdown in the repo. -->
+    <EmbeddedResource Include="Seed\Documents\*.md" LogicalName="documents/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Seed\Calls\*.md" LogicalName="calls/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Truckroll.Api.Tests" />
   </ItemGroup>
 
