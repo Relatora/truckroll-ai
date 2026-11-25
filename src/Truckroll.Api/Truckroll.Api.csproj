@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Truckroll.Data\Truckroll.Data.csproj" />
     <ProjectReference Include="..\Truckroll.ServiceDefaults\Truckroll.ServiceDefaults.csproj" />
   </ItemGroup>
 
