@@ -23,6 +23,9 @@ namespace Truckroll.Api.Tests.Infrastructure;
 /// </remarks>
 public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <summary>The day the test database's demo data is built around.</summary>
+    public static readonly DateOnly DemoToday = new(2026, 11, 25);
+
     // Root, so tests that need a database of their own (the seeding test) can create one.
     private readonly MySqlContainer _mysql = new MySqlBuilder("mysql:8.4")
         .WithDatabase("truckroll")
@@ -34,6 +37,10 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
     public async ValueTask InitializeAsync()
     {
         await Task.WhenAll(_mysql.StartAsync(), _redis.StartAsync());
+
+        // Start the host now, once, so migrations and the demo seed run before any test. Left to
+        // the first test that touches it, parallel test classes race to start it and seed twice.
+        _ = Services;
     }
 
     /// <summary>A connection string to another, empty database on the same MySQL server.</summary>
@@ -50,6 +57,10 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:truckroll", _mysql.GetConnectionString());
         builder.UseSetting("ConnectionStrings:redis", _redis.GetConnectionString());
+
+        // The demo company is seeded into the test database too, pinned to one day, so tests can
+        // sign in as the demo users and refer to anchor customers by name.
+        builder.UseSetting("Demo:Today", DemoToday.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
     }
 
     public override async ValueTask DisposeAsync()

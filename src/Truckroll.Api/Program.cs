@@ -1,4 +1,8 @@
+using System.Text.Json.Serialization;
+using Truckroll.Api.Access;
 using Truckroll.Api.Data;
+using Truckroll.Api.Features.Auth;
+using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Status;
 
@@ -11,7 +15,12 @@ builder.AddServiceDefaults();
 builder.AddTruckrollData();
 builder.AddRedisClient("redis");
 
+builder.Services.AddTruckrollAccess();
 builder.Services.AddProblemDetails();
+
+// Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
+// types read like the domain.
+builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -21,6 +30,9 @@ await app.MigrateDatabaseAsync();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -29,7 +41,12 @@ if (app.Environment.IsDevelopment())
 // Every endpoint lives under /api, which is the prefix the Next.js app rewrites to us.
 var api = app.MapGroup("/api");
 api.MapStatusEndpoints();
+api.MapAuthEndpoints();
 api.MapDevEndpoints(app.Environment);
+
+// CRM data: signed-in users only, and every query inside goes through AccessScope.
+var crm = api.MapGroup("").RequireAuthorization();
+crm.MapCustomerEndpoints();
 
 app.MapDefaultEndpoints();
 

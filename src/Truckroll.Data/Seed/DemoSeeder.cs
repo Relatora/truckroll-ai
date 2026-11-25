@@ -12,6 +12,12 @@ public static class DemoSeeder
     public const int DefaultSeed = 2026;
 
     /// <summary>
+    /// The password for every demo login. Published in the README on purpose: these accounts only
+    /// exist in a local demo database full of invented people.
+    /// </summary>
+    public const string DemoPassword = "truckroll-demo";
+
+    /// <summary>
     /// Seeds the database if it has no branches yet. Returns false when there was already data,
     /// so a restart never duplicates or overwrites anything.
     /// </summary>
@@ -32,6 +38,7 @@ public static class DemoSeeder
         db.Jobs.AddRange(data.Jobs);
         db.KnowledgeDocuments.AddRange(data.Documents);
         db.CallRecords.AddRange(data.Calls);
+        db.Users.AddRange(DemoUsers.Create(data));
 
         await db.SaveChangesAsync(cancellationToken);
         return true;
