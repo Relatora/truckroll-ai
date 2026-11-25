@@ -4,8 +4,36 @@ A field-service CRM for heating, cooling and plumbing companies, with AI where t
 goes: finding what's installed at a house, picking the right technician, and turning a phone call
 into a ticket.
 
-Built on ASP.NET Core 10, EF Core, MySQL, Redis, SignalR and Next.js. Work in progress; the plan
-is in [docs/DESIGN.md](docs/DESIGN.md).
+Built on ASP.NET Core 10, EF Core, MySQL, Redis, SignalR and Next.js. Work in progress toward
+[v0.1.0](https://github.com/Relatora/truckroll-ai/milestone/1); the plan is in
+[docs/DESIGN.md](docs/DESIGN.md).
+
+## Running it locally
+
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), Docker, Node 22+
+and [Ollama](https://ollama.com).
+
+```bash
+ollama pull qwen2.5:7b
+ollama pull nomic-embed-text
+cd web && npm install && cd ..
+dotnet run --project src/Truckroll.AppHost --launch-profile http
+```
+
+The console prints a link to the Aspire dashboard, which shows every resource, its logs and its
+traces. The web app is at http://localhost:3000. If you have the Aspire CLI
+(`dotnet tool install -g Aspire.Cli`), `aspire run` does the same thing.
+
+## Quality gate
+
+```powershell
+./scripts/ci.ps1     # or ./scripts/ci.sh
+```
+
+`dotnet format`, a Release build with warnings as errors, xUnit tests against real MySQL and
+Redis in Testcontainers, ESLint, `tsc` and a production `next build`. GitHub Actions is locked on
+this account, so the gate runs locally before every merge; the workflow in `.github/workflows`
+runs the same script once it's unlocked.
 
 ## License
 

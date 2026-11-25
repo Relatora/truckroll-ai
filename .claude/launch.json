@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "truckroll",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Truckroll.AppHost", "--launch-profile", "http"],
+      "port": 3000
+    }
+  ]
+}

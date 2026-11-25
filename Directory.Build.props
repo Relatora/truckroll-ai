@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Settings every C# project in the repo shares, so no project can quietly opt out of them.
+    Warnings fail the build: the gate (scripts/ci.ps1) builds with them as errors anyway,
+    and finding out in the editor is cheaper than finding out in the gate.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- XML doc comments are part of the code's documentation, so the compiler checks them. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Missing XML comments on every public member would be noise; malformed ones are still errors. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>
