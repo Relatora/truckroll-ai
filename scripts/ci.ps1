@@ -6,7 +6,8 @@
     GitHub Actions is locked on this account, so this script is the CI run, and every PR says
     so. The steps, in order:
 
-      1. dotnet format   C# style and analyzers match .editorconfig (no style debates in review)
+      1. dotnet format   C# style and analyzers match .editorconfig (no style debates in review);
+                         EF-generated migrations are excluded
       2. dotnet build    Release build, warnings are errors (Directory.Build.props)
       3. dotnet test     xUnit against real MySQL and Redis in Testcontainers; no real models
       4. eslint          Next.js and TypeScript lint rules
@@ -50,7 +51,7 @@ function Invoke-Step([string] $Name, [scriptblock] $Command) {
 Push-Location $root
 try {
     if ($runDotnet) {
-        Invoke-Step 'dotnet format' { dotnet format Truckroll.slnx --verify-no-changes --verbosity quiet }
+        Invoke-Step 'dotnet format' { dotnet format Truckroll.slnx --verify-no-changes --verbosity quiet --exclude src/Truckroll.Data/Migrations }
         Invoke-Step 'dotnet build' { dotnet build Truckroll.slnx --configuration Release --nologo --verbosity quiet }
         Invoke-Step 'dotnet test' { dotnet test --solution Truckroll.slnx --configuration Release --no-build }
     }

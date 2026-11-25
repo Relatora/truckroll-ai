@@ -6,6 +6,9 @@
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Pins transitive dependencies too, so EF Core can't arrive at two patch levels
+         (one through the MySQL provider, one through the design-time package). -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <AspireVersion>17.0.0</AspireVersion>
     <AspNetCoreVersion>10.0.15</AspNetCoreVersion>
     <OpenTelemetryVersion>1.18.0</OpenTelemetryVersion>
@@ -36,6 +39,14 @@
 
   <ItemGroup Label="API">
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetCoreVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Data">
+    <!-- Pomelo stopped at EF Core 9; Microting continues it for EF Core 10 (docs/adr/002). -->
+    <PackageVersion Include="Microting.EntityFrameworkCore.MySql" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(AspNetCoreVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">

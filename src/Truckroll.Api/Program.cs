@@ -1,3 +1,4 @@
+using Truckroll.Api.Data;
 using Truckroll.Api.Features.Status;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,13 +7,15 @@ builder.AddServiceDefaults();
 
 // Aspire client integrations: each registers the client, a health check and its telemetry.
 // The connection names match the resources in Truckroll.AppHost.
-builder.AddMySqlDataSource("truckroll");
+builder.AddTruckrollData();
 builder.AddRedisClient("redis");
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+await app.MigrateDatabaseAsync();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
