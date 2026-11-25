@@ -1,0 +1,41 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Playwright
+web/test-results/
+web/playwright-report/
+web/blob-report/
+web/playwright/.cache/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+src/**/appsettings.Development.local.json
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Private study notes (see .journal/README in showroom-ai for the format)
+.journal/
+
+# Claude Code local state
+.claude/settings.local.json
