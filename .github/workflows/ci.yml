@@ -1,0 +1,43 @@
+# Runs the same quality gate as scripts/ci.sh on every PR and push to main.
+#
+# GitHub Actions is currently locked on this account by a billing issue, so runs can't start
+# and every PR records the local gate run instead. Until the lock is lifted the workflow is
+# manual-only; automatic triggers would just put a "startup failure" on every commit. Once it's
+# lifted, replace `workflow_dispatch` with:
+#
+#   pull_request:
+#   push:
+#     branches: [main]
+name: CI
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+
+      # Docker is available on ubuntu-latest, so the Testcontainers tests run as they do locally.
+      - name: Quality gate
+        run: ./scripts/ci.sh

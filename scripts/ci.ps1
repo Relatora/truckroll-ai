@@ -1,0 +1,79 @@
+<#
+.SYNOPSIS
+    The quality gate. Everything here must pass before a PR merges.
+
+.DESCRIPTION
+    GitHub Actions is locked on this account, so this script is the CI run, and every PR says
+    so. The steps, in order:
+
+      1. dotnet format   C# style and analyzers match .editorconfig (no style debates in review)
+      2. dotnet build    Release build, warnings are errors (Directory.Build.props)
+      3. dotnet test     xUnit against real MySQL and Redis in Testcontainers; no real models
+      4. eslint          Next.js and TypeScript lint rules
+      5. tsc             Type check the web app
+      6. next build      The production bundle still builds
+
+    The README's "Quality gate" section lists the same steps; keep the two in step.
+
+.PARAMETER Dotnet
+    Run only the .NET half (steps 1 to 3).
+
+.PARAMETER Web
+    Run only the web half (steps 4 to 6).
+
+.EXAMPLE
+    ./scripts/ci.ps1
+    ./scripts/ci.ps1 -Web
+#>
+[CmdletBinding()]
+param(
+    [switch] $Dotnet,
+    [switch] $Web
+)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $PSScriptRoot
+$runDotnet = $Dotnet -or -not $Web
+$runWeb = $Web -or -not $Dotnet
+
+function Invoke-Step([string] $Name, [scriptblock] $Command) {
+    Write-Host "`n==> $Name" -ForegroundColor Cyan
+    $started = Get-Date
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAILED: $Name" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+    Write-Host ("    ok ({0:n0}s)" -f ((Get-Date) - $started).TotalSeconds) -ForegroundColor Green
+}
+
+Push-Location $root
+try {
+    if ($runDotnet) {
+        Invoke-Step 'dotnet format' { dotnet format Truckroll.slnx --verify-no-changes --verbosity quiet }
+        Invoke-Step 'dotnet build' { dotnet build Truckroll.slnx --configuration Release --nologo --verbosity quiet }
+        Invoke-Step 'dotnet test' { dotnet test --solution Truckroll.slnx --configuration Release --no-build }
+    }
+
+    if ($runWeb) {
+        Push-Location web
+        try {
+            # `next build` and a running `next dev` share .next/ and both use a lot of memory.
+            # On a machine near its limit, running both has crashed other programs, so refuse.
+            $devServer = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+                Where-Object { $_.CommandLine -match 'next(\.js)?["'']?\s+dev' -and $_.CommandLine -match [regex]::Escape((Get-Location).Path) }
+            if ($devServer) {
+                Write-Host 'A next dev server for this app is running. Stop it before the web build.' -ForegroundColor Yellow
+                exit 1
+            }
+
+            Invoke-Step 'eslint' { npm run lint --silent }
+            Invoke-Step 'tsc' { npx tsc --noEmit }
+            Invoke-Step 'next build' { npm run build --silent }
+        }
+        finally { Pop-Location }
+    }
+
+    Write-Host "`nQuality gate passed." -ForegroundColor Green
+}
+finally { Pop-Location }
