@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Truckroll.Data.Domain;
 
@@ -8,11 +9,17 @@ namespace Truckroll.Data;
 /// (the retrieval index and caches) that can be rebuilt from here.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Feature code should not read these sets directly for anything a user can see. It goes through
 /// the Access layer in the API (#5), which adds the branch and role filters. The sets are public
 /// because the seed, migrations and indexer legitimately need everything.
+/// </para>
+/// <para>
+/// It also holds the sign-in store (<see cref="IdentityUserContext{TUser}"/>: users, logins,
+/// tokens; no role tables, see <see cref="AppUser"/>).
+/// </para>
 /// </remarks>
-public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : DbContext(options)
+public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : IdentityUserContext<AppUser>(options)
 {
     /// <summary>The MySQL version the schema targets. Fixed, so nothing connects just to ask.</summary>
     public static readonly ServerVersion ServerVersion = new MySqlServerVersion(new Version(8, 4, 0));
@@ -30,9 +37,10 @@ public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Identity's own mapping first, so ours can refine it.
+        base.OnModelCreating(modelBuilder);
         modelBuilder.HasCharSet("utf8mb4");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TruckrollDbContext).Assembly);
-        base.OnModelCreating(modelBuilder);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -51,6 +59,7 @@ public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : 
         configurationBuilder.Properties<NoteSource>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<CallStatus>().HaveConversion<string>().HaveMaxLength(20);
         configurationBuilder.Properties<DocumentKind>().HaveConversion<string>().HaveMaxLength(20);
+        configurationBuilder.Properties<UserRole>().HaveConversion<string>().HaveMaxLength(20);
 
         configurationBuilder.Properties<decimal>().HavePrecision(10, 2);
 

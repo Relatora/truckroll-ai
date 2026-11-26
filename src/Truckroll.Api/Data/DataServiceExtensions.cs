@@ -36,15 +36,14 @@ public static class DataServiceExtensions
     }
 
     /// <summary>
-    /// Applies pending migrations at startup, in development and tests only, and in development
-    /// seeds the demo company into an empty database. In production, migrations run as a separate,
-    /// reviewed deployment step (an EF migrations bundle), never as a side effect of an app
-    /// instance starting.
+    /// Applies pending migrations at startup and seeds the demo company into an empty database,
+    /// in development and tests only (tests pin the demo date). In production, migrations run as
+    /// a separate, reviewed deployment step (an EF migrations bundle), never as a side effect of
+    /// an app instance starting.
     /// </summary>
     public static async Task MigrateDatabaseAsync(this WebApplication app)
     {
-        var development = app.Environment.IsDevelopment();
-        if (!development && !app.Environment.IsEnvironment("Testing"))
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
         {
             return;
         }
@@ -53,13 +52,10 @@ public static class DataServiceExtensions
         var db = scope.ServiceProvider.GetRequiredService<TruckrollDbContext>();
         await db.Database.MigrateAsync();
 
-        if (development)
+        var today = DemoToday(app.Configuration);
+        if (await DemoSeeder.SeedIfEmptyAsync(db, today))
         {
-            var today = DemoToday(app.Configuration);
-            if (await DemoSeeder.SeedIfEmptyAsync(db, today))
-            {
-                app.Logger.LogInformation("Seeded the Kestrel Home Comfort demo data for {Today}", today);
-            }
+            app.Logger.LogInformation("Seeded the Kestrel Home Comfort demo data for {Today}", today);
         }
     }
 
