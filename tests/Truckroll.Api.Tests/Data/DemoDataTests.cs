@@ -48,6 +48,22 @@ public sealed class DemoDataTests
     }
 
     [Fact]
+    public void Nothing_is_completed_in_the_future()
+    {
+        var endOfToday = new DateTimeOffset(Today.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).AddHours(5);
+
+        Assert.All(Data.Jobs.Where(j => j.Status == JobStatus.Completed), j => Assert.True(j.CompletedAt < endOfToday, $"{j.Summary} completed {j.CompletedAt:O}"));
+    }
+
+    [Fact]
+    public void No_two_homes_share_an_address()
+    {
+        var addresses = Data.Customers.SelectMany(c => c.Properties).Select(p => $"{p.Street}, {p.City}").ToList();
+
+        Assert.Equal(addresses.Count, addresses.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+    }
+
+    [Fact]
     public void Every_equipment_model_has_a_manual()
     {
         var models = Data.Customers.SelectMany(c => c.Properties).SelectMany(p => p.Equipment)

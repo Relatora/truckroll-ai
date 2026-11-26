@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
 using Truckroll.Api.Access;
+using Truckroll.Api.Common;
 using Truckroll.Api.Data;
 using Truckroll.Api.Features.Auth;
+using Truckroll.Api.Features.Branches;
 using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Status;
@@ -16,6 +18,7 @@ builder.AddTruckrollData();
 builder.AddRedisClient("redis");
 
 builder.Services.AddTruckrollAccess();
+builder.Services.AddSingleton<CompanyClock>();
 builder.Services.AddProblemDetails();
 
 // Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
@@ -47,6 +50,7 @@ api.MapDevEndpoints(app.Environment);
 // CRM data: signed-in users only, and every query inside goes through AccessScope.
 var crm = api.MapGroup("").RequireAuthorization();
 crm.MapCustomerEndpoints();
+crm.MapBranchEndpoints();
 
 app.MapDefaultEndpoints();
 
