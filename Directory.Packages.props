@@ -52,6 +52,7 @@
 
   <ItemGroup Label="Tests">
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="$(AspNetCoreVersion)" />
     <PackageVersion Include="Testcontainers.MySql" Version="4.17.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.17.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
