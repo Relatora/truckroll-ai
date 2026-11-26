@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ export function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const submitButton = useRef<HTMLButtonElement>(null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -77,7 +78,7 @@ export function SignInForm() {
             {error}
           </p>
         )}
-        <Button type="submit" className="w-full" disabled={pending || !email || !password}>
+        <Button ref={submitButton} type="submit" className="w-full" disabled={pending || !email || !password}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
@@ -97,6 +98,8 @@ export function SignInForm() {
                 onClick={() => {
                   setEmail(account.email);
                   setPassword(DEMO_PASSWORD);
+                  // Next stop is Sign in, so Enter (or one more click) finishes the job.
+                  requestAnimationFrame(() => submitButton.current?.focus());
                 }}
               >
                 <span className="font-medium">{account.who}</span>
@@ -106,7 +109,7 @@ export function SignInForm() {
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Picking one fills in the form. The password for all of them is <code>{DEMO_PASSWORD}</code>.
+          Picking one fills in the form. The password for all of them is <code className="whitespace-nowrap">{DEMO_PASSWORD}</code>.
         </p>
       </section>
     </div>
