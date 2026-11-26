@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Aurora } from "@/components/brand/aurora";
 import { ThemeSwitch } from "@/components/motion/theme-switch";
 import { CommandMenu } from "@/components/shell/command-menu";
@@ -12,7 +13,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <Aurora calm />
-      <Dock />
+      {/* The dock reads the current path, which only exists at request time on dynamic routes. */}
+      <Suspense>
+        <Dock />
+      </Suspense>
       <div className="flex min-h-svh flex-1 flex-col md:pl-24">
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-2 md:px-8">
           <div className="flex flex-1 justify-center">
