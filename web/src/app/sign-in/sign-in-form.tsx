@@ -91,6 +91,8 @@ export function SignInForm() {
             <li key={account.email}>
               <button
                 type="button"
+                // Without this, screen readers run the two spans together: "Dana WhitfieldCustomer service".
+                aria-label={`Use ${account.who}, ${account.role}`}
                 className="flex w-full items-baseline justify-between gap-4 px-3 py-2 text-left text-sm hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
                 onClick={() => {
                   setEmail(account.email);
