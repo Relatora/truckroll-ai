@@ -1,43 +1,58 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { ApiStatus } from "@/components/api-status";
-import { Button } from "@/components/ui/button";
-import { roleLabels, signOut, useMe } from "@/lib/session";
+import Link from "next/link";
+import { PageHeader } from "@/components/shell/page-header";
+import { NotBuiltYet } from "@/components/shell/not-built-yet";
+import { navigationFor } from "@/components/shell/navigation";
+import { roleLabels, useMe } from "@/lib/session";
 
 /**
- * A temporary signed-in page that proves the session works end to end. The app shell and the
- * real dashboard replace it in #6 and #17.
+ * Where everyone lands after signing in. Until the owner dashboard (#17) arrives, it greets the
+ * person and lays out where their day happens.
  */
-export default function DashboardPage() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: me, isPending } = useMe();
+export default function OverviewPage() {
+  const { data: me } = useMe();
 
-  async function leave() {
-    await signOut();
-    queryClient.clear();
-    router.replace("/sign-in");
+  if (!me) {
+    return <div className="h-24 w-80 animate-pulse rounded-lg bg-muted" aria-label="Loading" />;
   }
 
+  const firstName = me.displayName.split(" ")[0];
+  const pages = navigationFor(me).filter((item) => item.href !== "/dashboard");
+
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 p-8">
-      {isPending || !me ? (
-        <p className="text-muted-foreground">Loading your session…</p>
-      ) : (
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Hi, {me.displayName.split(" ")[0]}</h1>
-          <p className="text-muted-foreground">
-            {roleLabels[me.role]}
-            {me.branch ? `, ${me.branch.name}` : ", all branches"}
-          </p>
-          <Button variant="outline" onClick={leave}>
-            Sign out
-          </Button>
-        </div>
+    <>
+      <PageHeader
+        title={`${greeting()}, ${firstName}`}
+        description={`${roleLabels[me.role]}, ${me.branch ? `${me.branch.name} branch` : "all five branches"}.`}
+      />
+
+      <nav aria-label="Where to start" className="mb-10 grid max-w-4xl gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
+        {pages.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group flex items-center gap-3 bg-card px-4 py-3.5 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+          >
+            <item.icon className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden />
+            <span className="font-medium">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
+
+      {me.can.canSeeFinancials && (
+        <NotBuiltYet
+          title="Branch numbers"
+          description="Jobs, first-time-fix rate, revenue and renewals across your branches."
+          issue={17}
+          embedded
+        />
       )}
-      <ApiStatus />
-    </main>
+    </>
   );
+}
+
+function greeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
