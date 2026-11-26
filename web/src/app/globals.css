@@ -476,3 +476,60 @@
     background-position: 28px 0;
   }
 }
+
+/* ------------------------------------------------------------------ Dispatch map markers */
+
+.board-map .maplibregl-canvas {
+  outline: none;
+}
+
+/* The basemap is light; in After hours it's inverted on the canvas only, so pins stay true. */
+.dark .board-map .maplibregl-canvas {
+  filter: invert(0.92) hue-rotate(180deg) saturate(0.55) brightness(0.95);
+}
+
+.board-pin {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--pin);
+  border: 2.5px solid var(--card);
+  box-shadow: 0 4px 12px -2px color-mix(in oklch, var(--pin) 70%, transparent);
+  cursor: pointer;
+  transition: transform 200ms var(--ease-spring), box-shadow 200ms;
+}
+.board-pin:hover,
+.board-pin[data-selected="true"] {
+  transform: scale(1.5);
+  box-shadow: 0 0 0 6px color-mix(in oklch, var(--pin) 25%, transparent);
+}
+.board-pin[data-waiting="true"] {
+  background: var(--card);
+  border-color: var(--pin);
+}
+.board-pin[data-done="true"] {
+  opacity: 0.45;
+}
+.board-pin[data-emergency="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid var(--ember);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+
+.board-truck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--truck);
+  color: white;
+  font: 700 11px/1 var(--font-figtree);
+  border: 2px solid var(--card);
+  box-shadow: 0 6px 16px -4px color-mix(in oklch, var(--truck) 80%, transparent);
+  transition: transform 600ms var(--ease-spring);
+}

@@ -46,6 +46,9 @@ public sealed class DemoDataGenerator
     private readonly Dictionary<string, Branch> _branches = [];
     private int _serialCounter = 10_000;
 
+    /// <summary>Technician windows already taken today and ahead, so no truck is in two places at once.</summary>
+    private readonly HashSet<(Technician Technician, DateOnly Day, int Hour)> _booked = [];
+
     /// <summary>"street|town" pairs already handed out, so no two homes share an address.</summary>
     private readonly HashSet<string> _addresses = new(StringComparer.OrdinalIgnoreCase);
 
@@ -546,6 +549,9 @@ public sealed class DemoDataGenerator
     {
         AddTheDemoEmergency();
 
+        // Keep Nadia free at noon: she's who the emergency's dispatch suggestion should find.
+        _booked.Add((_data.Technicians.Single(t => t.FirstName == "Nadia"), _today, 12));
+
         foreach (var branch in _data.Branches)
         {
             var customers = _data.Customers.Where(c => c.Branch == branch && !_data.AnchorCustomers.Contains(c)).ToList();
@@ -562,13 +568,24 @@ public sealed class DemoDataGenerator
                 var count = day == 0 ? technicians.Count * 3 : technicians.Count * 2 + _random.Next(0, 3);
                 for (var i = 0; i < count; i++)
                 {
-                    var customer = Pick(customers);
+                    var window = Windows[i % Windows.Length];
+
+                    // Today's morning is built around the technicians: each one gets an 8 am job
+                    // (done) and a 10 am job (on site) on equipment they're licensed for, so every
+                    // branch's board shows a real morning whatever the dice say.
+                    var morningTech = day == 0 && window.Start <= 10 && technicians.Count > 0 ? technicians[(i / Windows.Length) % technicians.Count] : null;
+                    var home = morningTech is null ? null : PickHomeFor(customers, morningTech);
+                    if (home is null)
+                    {
+                        // Nothing at these homes needs this technician's trade (a plumber, say).
+                        morningTech = null;
+                    }
+
+                    var (customer, equipment) = home ?? PickHome(customers);
                     var property = customer.Properties[0];
-                    var equipment = Pick(property.Equipment);
                     var model = EquipmentCatalog.ByCode(ModelCode(equipment));
                     var seasonal = model.Faults.Where(f => f.Months.Contains(date.Month)).ToArray();
                     var fault = seasonal.Length > 0 ? PickWeighted(seasonal.Select(f => (f, f.Weight)).ToArray()) : null;
-                    var window = Windows[i % Windows.Length];
 
                     var job = new Job
                     {
@@ -589,8 +606,11 @@ public sealed class DemoDataGenerator
                         Status = JobStatus.Scheduled,
                     };
 
-                    // Today is frozen at late morning; later days are partly assigned already.
-                    var technician = QualifiedTechnician(branch, model.Certification, model.Skill);
+                    // Today is frozen at late morning; later days are partly assigned already. Only a
+                    // technician free in this window is considered.
+                    var technician = morningTech is not null && !_booked.Contains((morningTech, date, window.Start))
+                        ? morningTech
+                        : FreeTechnician(branch, model.Certification, model.Skill, date, window.Start);
                     if (day == 0)
                     {
                         PlaceOnToday(job, window.Start, technician, fault, i);
@@ -602,10 +622,48 @@ public sealed class DemoDataGenerator
                         job.DispatchedAt = AtLocal(_today, 8);
                     }
 
+                    if (job.Technician is { } assigned)
+                    {
+                        _booked.Add((assigned, date, window.Start));
+                    }
+
                     _data.Jobs.Add(job);
                 }
             }
         }
+    }
+
+    private (Customer Customer, Equipment Equipment) PickHome(IReadOnlyList<Customer> customers)
+    {
+        var customer = Pick(customers);
+        return (customer, Pick(customer.Properties[0].Equipment));
+    }
+
+    /// <summary>A home with equipment this technician is licensed and skilled to work on.</summary>
+    private (Customer Customer, Equipment Equipment)? PickHomeFor(IReadOnlyList<Customer> customers, Technician technician)
+    {
+        var fits = customers
+            .SelectMany(c => c.Properties[0].Equipment.Select(e => (Customer: c, Equipment: e)))
+            .Where(x =>
+            {
+                var model = EquipmentCatalog.ByCode(ModelCode(x.Equipment));
+                return (technician.Certifications & model.Certification) == model.Certification && (technician.Skills & model.Skill) != 0;
+            })
+            .ToList();
+        return fits.Count > 0 ? Pick(fits) : null;
+    }
+
+    /// <summary>
+    /// A qualified technician from this branch with nothing in this window. No borrowing from other
+    /// branches on the live days: borrowing first-come-first-served let one branch's morning use up
+    /// another's only gas technician. A job nobody local can take waits for the dispatcher.
+    /// </summary>
+    private Technician? FreeTechnician(Branch branch, Certifications certification, TechnicianSkills skill, DateOnly day, int hour)
+    {
+        var free = _data.Technicians
+            .Where(t => t.Branch == branch && (t.Certifications & certification) == certification && (t.Skills & skill) != 0 && !_booked.Contains((t, day, hour)))
+            .ToList();
+        return free.Count > 0 ? Pick(free) : null;
     }
 
     private void PlaceOnToday(Job job, int windowStart, Technician? technician, Fault? fault, int index)

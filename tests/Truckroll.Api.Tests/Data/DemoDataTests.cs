@@ -48,6 +48,27 @@ public sealed class DemoDataTests
     }
 
     [Fact]
+    public void No_technician_is_booked_twice_in_the_same_window()
+    {
+        var clashes = Data.Jobs
+            .Where(j => j.Technician is not null && j.Status != JobStatus.Cancelled && DateOnly.FromDateTime(j.WindowStart.UtcDateTime) >= Today.AddDays(-1))
+            .GroupBy(j => (j.Technician, j.WindowStart))
+            .Where(g => g.Count() > 1)
+            .Select(g => $"{g.Key.Technician!.FullName} at {g.Key.WindowStart:O}")
+            .ToList();
+
+        Assert.True(clashes.Count == 0, string.Join(", ", clashes));
+    }
+
+    [Fact]
+    public void Nadia_is_free_at_noon_today_for_the_emergency()
+    {
+        var noon = Data.Jobs.Single(j => j.Priority == JobPriority.Emergency && j.Status == JobStatus.Scheduled && j.Customer.LastName == "Raman").WindowStart;
+
+        Assert.DoesNotContain(Data.Jobs, j => j.Technician?.FirstName == "Nadia" && j.WindowStart == noon);
+    }
+
+    [Fact]
     public void Nothing_is_completed_in_the_future()
     {
         var endOfToday = new DateTimeOffset(Today.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero).AddHours(5);
@@ -123,13 +144,22 @@ public sealed class DemoDataTests
         var zone = DemoDataGenerator.LocalZone;
         var todays = Data.Jobs.Where(j => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(j.WindowStart, zone).DateTime) == Today).ToList();
 
-        Assert.All(Data.Branches, branch =>
-        {
-            var board = todays.Where(j => j.Branch == branch).ToList();
-            Assert.Contains(board, j => j.Status == JobStatus.Completed);
-            Assert.Contains(board, j => j.Status == JobStatus.InProgress);
-            Assert.Contains(board, j => j.Status == JobStatus.Scheduled && j.Technician is null);
-        });
+        var missing = Data.Branches
+            .SelectMany(branch =>
+            {
+                var board = todays.Where(j => j.Branch == branch).ToList();
+                return new (string Code, string What, bool Present)[]
+                {
+                    (branch.Code, "done", board.Any(j => j.Status == JobStatus.Completed)),
+                    (branch.Code, "on site", board.Any(j => j.Status == JobStatus.InProgress)),
+                    (branch.Code, "waiting", board.Any(j => j.Status == JobStatus.Scheduled && j.Technician is null)),
+                };
+            })
+            .Where(x => !x.Present)
+            .Select(x => $"{x.Code} has nothing {x.What}")
+            .ToList();
+
+        Assert.True(missing.Count == 0, string.Join(", ", missing));
     }
 
     [Fact]
