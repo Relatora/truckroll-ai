@@ -6,6 +6,7 @@ using Truckroll.Api.Features.Auth;
 using Truckroll.Api.Features.Branches;
 using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
+using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Features.Status;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,7 @@ builder.AddRedisClient("redis");
 
 builder.Services.AddTruckrollAccess();
 builder.Services.AddSingleton<CompanyClock>();
+builder.Services.AddScoped<IJobEvents, InProcessJobEvents>();
 builder.Services.AddProblemDetails();
 
 // Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
@@ -51,6 +53,7 @@ api.MapDevEndpoints(app.Environment);
 var crm = api.MapGroup("").RequireAuthorization();
 crm.MapCustomerEndpoints();
 crm.MapBranchEndpoints();
+crm.MapJobEndpoints();
 
 app.MapDefaultEndpoints();
 

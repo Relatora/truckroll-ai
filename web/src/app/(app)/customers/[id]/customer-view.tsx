@@ -22,6 +22,7 @@ import { useState } from "react";
 import { AnimatedNumber } from "@/components/motion/animated-number";
 import { Reveal, RevealItem } from "@/components/motion/reveal";
 import { SpotlightCard } from "@/components/motion/spotlight-card";
+import { BookJobDialog } from "@/components/jobs/book-job-dialog";
 import { toneStyles } from "@/components/shell/navigation";
 import { ApiError } from "@/lib/api";
 import {
@@ -35,6 +36,7 @@ import {
   type EquipmentKind,
   type TimelineJob,
 } from "@/lib/customers";
+import { useMe } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 /**
@@ -118,6 +120,7 @@ export function CustomerView() {
 }
 
 function Header({ customer }: { customer: CustomerDetail }) {
+  const { data: me } = useMe();
   const home = customer.properties[0];
   const initials = customer.firstName[0] + customer.lastName[0];
   return (
@@ -161,6 +164,7 @@ function Header({ customer }: { customer: CustomerDetail }) {
         <a href={`mailto:${customer.email}`} aria-label={`Email ${customer.email}`} className="glass inline-flex size-10 items-center justify-center rounded-full transition-transform duration-200 ease-[var(--ease-spring)] hover:-translate-y-0.5">
           <Mail className="size-4" />
         </a>
+        {me?.can.canBookJobs && <BookJobDialog customerId={customer.id} />}
       </div>
     </div>
   );
@@ -326,7 +330,9 @@ function TimelineCard({ job }: { job: TimelineJob }) {
             {when.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
           </time>
           <span>{fromNow(job.windowStart)}</span>
-          <span className="tabular">{job.number}</span>
+          <Link href={`/jobs/${job.id}`} className="tabular underline decoration-foreground/20 underline-offset-2 hover:text-foreground">
+            {job.number}
+          </Link>
         </p>
         <span className="flex gap-1.5">
           {job.priority === "Emergency" && <Badge className="bg-ember text-white">Emergency</Badge>}

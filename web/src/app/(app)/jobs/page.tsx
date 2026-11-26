@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { NotBuiltYet } from "@/components/shell/not-built-yet";
+import { Suspense } from "react";
+import { JobsView } from "./jobs-view";
 
 export const metadata: Metadata = { title: "Jobs" };
 
-export default function Page() {
-  return <NotBuiltYet title="Jobs" description="Book, find and follow every job from the first call to the invoice." issue={8} />;
+export default function JobsPage() {
+  return (
+    <Suspense>
+      <JobsView />
+    </Suspense>
+  );
 }
