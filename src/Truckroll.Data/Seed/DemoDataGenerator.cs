@@ -46,6 +46,9 @@ public sealed class DemoDataGenerator
     private readonly Dictionary<string, Branch> _branches = [];
     private int _serialCounter = 10_000;
 
+    /// <summary>"street|town" pairs already handed out, so no two homes share an address.</summary>
+    private readonly HashSet<string> _addresses = new(StringComparer.OrdinalIgnoreCase);
+
     public DemoDataGenerator(int seed, DateOnly today)
     {
         _random = new Random(seed);
@@ -122,7 +125,7 @@ public sealed class DemoDataGenerator
             var property = new Property
             {
                 Customer = customer,
-                Street = anchor.Street,
+                Street = Claim(anchor.Street, branch.Name),
                 City = branch.Name,
                 PostalCode = anchor.PostalCode,
                 Latitude = anchor.Latitude,
@@ -190,7 +193,7 @@ public sealed class DemoDataGenerator
         var property = new Property
         {
             Customer = customer,
-            Street = $"{_random.Next(1, 400)} {Pick(PlaceAndPeopleCatalog.StreetNames)}",
+            Street = UniqueStreet(branch.Name),
             City = branch.Name,
             PostalCode = RandomPostalCode(),
             Latitude = branch.Latitude + (_random.NextDouble() - 0.5) * 0.08,
@@ -341,7 +344,9 @@ public sealed class DemoDataGenerator
                 for (var i = 0; i < repairs; i++)
                 {
                     var fault = PickWeighted(model.Faults.Select(f => (f, f.Weight)).ToArray());
-                    var day = RandomDayInMonths(Later(historyStart, equipment.InstalledOn.AddDays(60)), _today.AddDays(-2), fault.Months);
+                    // History stops five days back: a repair that needs a return visit books it up to
+                    // three days later, and a completed visit can't be in the future.
+                    var day = RandomDayInMonths(Later(historyStart, equipment.InstalledOn.AddDays(60)), _today.AddDays(-5), fault.Months);
                     if (day is null)
                     {
                         continue;
@@ -588,7 +593,7 @@ public sealed class DemoDataGenerator
                     var technician = QualifiedTechnician(branch, model.Certification, model.Skill);
                     if (day == 0)
                     {
-                        PlaceOnToday(job, window.Start, technician, fault);
+                        PlaceOnToday(job, window.Start, technician, fault, i);
                     }
                     else if (technician is not null && _random.NextDouble() < 0.5)
                     {
@@ -603,7 +608,7 @@ public sealed class DemoDataGenerator
         }
     }
 
-    private void PlaceOnToday(Job job, int windowStart, Technician? technician, Fault? fault)
+    private void PlaceOnToday(Job job, int windowStart, Technician? technician, Fault? fault, int index)
     {
         if (technician is null)
         {
@@ -627,8 +632,9 @@ public sealed class DemoDataGenerator
                 job.DispatchedAt = AtLocal(_today, 7);
                 break;
             default:
-                // Afternoon: half assigned, half waiting for the dispatcher (and a suggestion).
-                if (_random.NextDouble() < 0.5)
+                // Afternoon: alternately assigned and waiting for the dispatcher (and a suggestion).
+                // By position, not by chance, so every branch's board always has both.
+                if (index % 8 >= 4)
                 {
                     job.Technician = technician;
                     job.Status = JobStatus.Dispatched;
@@ -746,6 +752,29 @@ public sealed class DemoDataGenerator
         const string letters = "ABCEGHJKLMNPRSTVWXYZ";
         char L() => letters[_random.Next(letters.Length)];
         return $"N{_random.Next(1, 9)}{L()} {_random.Next(0, 9)}{L()}{_random.Next(0, 9)}";
+    }
+
+    /// <summary>Records an address as taken. Anchors claim theirs first, before any are generated.</summary>
+    private string Claim(string street, string town)
+    {
+        if (!_addresses.Add($"{street}|{town}"))
+        {
+            throw new InvalidOperationException($"Two anchor customers share {street}, {town}.");
+        }
+
+        return street;
+    }
+
+    private string UniqueStreet(string town)
+    {
+        while (true)
+        {
+            var street = $"{_random.Next(1, 400)} {Pick(PlaceAndPeopleCatalog.StreetNames)}";
+            if (_addresses.Add($"{street}|{town}"))
+            {
+                return street;
+            }
+        }
     }
 
     private string PickSize(EquipmentModel model) => Sizes.TryGetValue(model.Code, out var sizes) ? Pick(sizes) : "";
