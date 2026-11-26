@@ -1,17 +1,16 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The Truckroll wordmark: the name set in Archivo at full width and weight, the way a company's
- * name is lettered on a truck door. The two bars underneath read as a road, or a day on the board.
+ * The Truckroll mark: a thermal tile (heat into cool, the trade in one gradient) holding a T,
+ * beside the name in Bricolage. The same tile tops the dock in the app.
  */
-export function Wordmark({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+export function Wordmark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex flex-col gap-[0.18em] leading-none", className)}>
-      <span className="type-display text-[1em]">Truckroll</span>
-      <span aria-hidden className="flex h-[0.14em] gap-[0.18em]">
-        <span className={cn("w-[62%] rounded-full", inverted ? "bg-sidebar-primary" : "bg-ember")} />
-        <span className={cn("flex-1 rounded-full", inverted ? "bg-sidebar-foreground/40" : "bg-foreground/25")} />
+    <span className={cn("inline-flex items-center gap-2.5 leading-none", className)}>
+      <span className="flex size-[1.6em] items-center justify-center rounded-[0.45em] bg-[image:var(--thermal)] text-[0.85em] font-bold text-white shadow-[0_6px_18px_-6px_var(--violet)]">
+        T
       </span>
+      <span className="font-display text-[1em] font-bold tracking-[-0.03em]">Truckroll</span>
     </span>
   );
 }

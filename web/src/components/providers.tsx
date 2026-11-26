@@ -1,6 +1,7 @@
 "use client";
 
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -34,12 +35,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider delayDuration={300}>
-          {children}
-          <Toaster position="bottom-right" />
-        </TooltipProvider>
-      </QueryClientProvider>
+      {/* One spring for the whole app, so every motion feels like the same material. Motion
+          turns transforms into instant changes for people who ask for reduced motion. */}
+      <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.8 }}>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider delayDuration={200}>
+            {children}
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </MotionConfig>
     </ThemeProvider>
   );
 }

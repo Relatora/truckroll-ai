@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { Archivo } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
 /**
- * One family at two widths: expanded and heavy for display (truck lettering), normal width for
- * the interface. The width axis is what makes a single family carry both voices.
+ * Bricolage Grotesque for display: its optical-size axis draws big headlines with tight,
+ * characterful detail that a text face can't. Figtree for the interface: friendly, clear at
+ * 13px, with proper tabular figures for times and money.
  */
-const archivo = Archivo({
-  variable: "--font-archivo",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
-  axes: ["wdth"],
+  axes: ["opsz", "wdth"],
+});
+
+const figtree = Figtree({
+  variable: "--font-figtree",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // next-themes sets the theme class before React hydrates, which React would otherwise flag.
-    <html lang="en" className={`${archivo.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${bricolage.variable} ${figtree.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>
