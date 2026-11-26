@@ -5,7 +5,6 @@ import { LogOut, MoonStar, Search, Sun, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useState, useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandDialog,
@@ -18,7 +17,8 @@ import {
 } from "@/components/ui/command";
 import { api } from "@/lib/api";
 import { signOut, useMe } from "@/lib/session";
-import { navigationFor } from "./navigation";
+import { cn } from "@/lib/utils";
+import { navigationFor, toneStyles } from "./navigation";
 
 /** Mirrors CustomerSearchResult in Truckroll.Api/Features/Customers/CustomerEndpoints.cs. */
 type CustomerHit = { id: number; name: string; address: string | null; branchCode: string };
@@ -71,22 +71,27 @@ export function CommandMenu() {
 
   return (
     <>
-      <Button
-        variant="outline"
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="h-9 w-full max-w-sm justify-start gap-2 bg-card text-muted-foreground shadow-none"
+        className="glass group flex h-11 w-full max-w-xl items-center gap-3 rounded-full pr-2 pl-4 text-sm text-muted-foreground transition-[transform,box-shadow] duration-300 ease-[var(--ease-spring)] hover:-translate-y-0.5 hover:shadow-lift focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
-        <Search className="size-4" />
-        <span className="flex-1 text-left">Find a customer or page</span>
-        <kbd className="hidden rounded border bg-muted px-1.5 text-[0.7rem] font-medium sm:inline">{isMac ? "⌘K" : "Ctrl K"}</kbd>
-      </Button>
+        <Search className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" />
+        <span className="flex-1 truncate text-left">
+          <span className="sm:hidden">Search</span>
+          <span className="hidden sm:inline">Find a customer, page or setting</span>
+        </span>
+        <kbd className="hidden rounded-full bg-foreground/[0.06] px-2.5 py-1 text-xs font-semibold text-foreground/70 sm:inline">
+          {isMac ? "⌘K" : "Ctrl K"}
+        </kbd>
+      </button>
 
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
         title="Find anything"
         description="Search customers and pages"
-        className="sm:max-w-xl"
+        className="glass-strong sm:max-w-xl"
       >
         <Command>
           <CommandInput value={search} onValueChange={setSearch} placeholder="Name, phone, street or page…" />
@@ -120,8 +125,11 @@ export function CommandMenu() {
                   value={`page ${item.label} ${item.keywords?.join(" ") ?? ""}`}
                   onSelect={() => go(item.href)}
                 >
-                  <item.icon />
+                  <span className={cn("flex size-7 items-center justify-center rounded-lg", toneStyles[item.tone])}>
+                    <item.icon className="size-4" />
+                  </span>
                   <span>{item.label}</span>
+                  <span className="truncate text-muted-foreground">{item.blurb}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
