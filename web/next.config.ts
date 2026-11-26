@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  experimental: {
+    // The rewrite proxy gives up after 30 seconds by default. A local model that's still loading
+    // into memory, or a long streamed answer, takes longer. Matches the API's own Ollama timeout.
+    proxyTimeout: 5 * 60 * 1000,
+  },
+
   turbopack: {
     rules: {
       "*.css": {

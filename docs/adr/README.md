@@ -8,11 +8,12 @@ that's a sign we owe an ADR.
 | --------------------------------------------- | ------------------------------------------ | -------- |
 | [001](001-dotnet-10-lts.md)                   | Target .NET 10 LTS, not .NET 11            | Accepted |
 | [002](002-mysql-provider-for-ef-core-10.md)    | Reach MySQL through the Microting EF Core provider | Accepted |
+| [004](004-models-behind-microsoft-extensions-ai.md) | Put every model behind Microsoft.Extensions.AI, with Ollama by default | Accepted |
 | [006](006-same-origin-api.md)                 | Put the API behind the web app's origin and sign in with a cookie | Accepted |
 | [008](008-aspire-for-local-orchestration.md)  | Use Aspire to run the stack locally        | Accepted |
 
-Numbers 003, 004, 005 and 007 are reserved for decisions already planned in
-[DESIGN.md](../DESIGN.md): retrieval in Redis, the model abstraction, Kafka timing and dispatch
+Numbers 003, 005 and 007 are reserved for decisions already planned in
+[DESIGN.md](../DESIGN.md): retrieval in Redis, Kafka timing and dispatch
 ranking. Each is written when the code that implements it lands.
 
 New ADRs start from [the template](000-template.md) and add a row here. Never edit an accepted

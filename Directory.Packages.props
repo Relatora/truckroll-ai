@@ -41,6 +41,14 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetCoreVersion)" />
   </ItemGroup>
 
+  <ItemGroup Label="AI">
+    <!-- One abstraction for every model (docs/adr/004). The provider packages plug into it. -->
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="11.0.1" />
+    <PackageVersion Include="OllamaSharp" Version="5.5.2" />
+    <!-- Anthropic's official SDK ships near-daily; pinned so a build never changes under us. -->
+    <PackageVersion Include="Anthropic" Version="13.14.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Data">
     <!-- Pomelo stopped at EF Core 9; Microting continues it for EF Core 10 (docs/adr/002). -->
     <PackageVersion Include="Microting.EntityFrameworkCore.MySql" Version="10.0.14" />

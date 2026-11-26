@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Testcontainers.MySql;
 using Testcontainers.Redis;
 
@@ -61,7 +62,19 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
         // The demo company is seeded into the test database too, pinned to one day, so tests can
         // sign in as the demo users and refer to anchor customers by name.
         builder.UseSetting("Demo:Today", DemoToday.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+
+        // No real models in tests. The fakes replace the provider clients, and Ollama's address
+        // points at a closed port, so anything that slipped past the fakes fails fast and loudly
+        // instead of quietly calling a model on the developer's machine.
+        builder.UseSetting("ConnectionStrings:ollama", "Endpoint=http://127.0.0.1:9");
+        builder.ConfigureTestServices(services => services.UseFakeModels());
     }
+
+    /// <summary>The scripted chat model every test shares.</summary>
+    public FakeChatClient Chat => Services.GetRequiredService<FakeChatClient>();
+
+    /// <summary>The deterministic embedder every test shares.</summary>
+    public FakeEmbeddingGenerator Embedder => Services.GetRequiredService<FakeEmbeddingGenerator>();
 
     public override async ValueTask DisposeAsync()
     {
