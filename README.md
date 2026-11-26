@@ -24,6 +24,21 @@ The console prints a link to the Aspire dashboard, which shows every resource, i
 traces. The web app is at http://localhost:3000. If you have the Aspire CLI
 (`dotnet tool install -g Aspire.Cli`), `aspire run` does the same thing.
 
+### Models
+
+Chat runs on `qwen2.5:7b` through Ollama, and embeddings on `nomic-embed-text`. To have Claude
+answer instead, change one setting and add a key. Embeddings stay local either way (see
+[ADR-004](docs/adr/004-models-behind-microsoft-extensions-ai.md)).
+
+```bash
+dotnet user-secrets --project src/Truckroll.Api set "AI:Provider" Claude
+dotnet user-secrets --project src/Truckroll.Api set "AI:Claude:ApiKey" <your key>
+```
+
+`GET /api/dev/ai-check` (development only) asks the chat model one question, embeds one string,
+and reports which models answered and how long each took. Each call shows up as a span in the
+Aspire dashboard's traces.
+
 ## Quality gate
 
 ```powershell

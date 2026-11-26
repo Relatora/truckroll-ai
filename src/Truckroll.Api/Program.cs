@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Truckroll.Api.Access;
+using Truckroll.Api.Ai;
 using Truckroll.Api.Common;
 using Truckroll.Api.Data;
 using Truckroll.Api.Features.Auth;
@@ -18,6 +19,9 @@ builder.AddServiceDefaults();
 // The connection names match the resources in Truckroll.AppHost.
 builder.AddTruckrollData();
 builder.AddRedisClient("redis");
+
+// Chat and embedding models: Ollama by default, Claude for chat by setting (docs/adr/004).
+builder.AddTruckrollAi();
 
 builder.Services.AddTruckrollAccess();
 builder.Services.AddSingleton<CompanyClock>();
