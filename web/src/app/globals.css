@@ -2,14 +2,26 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * Truckroll's design tokens.
+ *
+ * The palette comes from the trade: heating and cooling. Ember marks heat and urgency (furnaces,
+ * boilers, emergencies), frost marks cooling (air conditioners, heat pumps), aqua marks water
+ * (plumbing, water heaters). Colour always carries one of those meanings; it's never decoration.
+ *
+ * The one gradient, ember to frost ("thermal"), is reserved for text and suggestions the AI
+ * drafted. Seeing it means "a model wrote this, a person decides".
+ *
+ * Light mode is cool paper with navy ink. Dark mode is "after hours": a deep night blue, not black.
+ */
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-archivo);
+  --font-heading: var(--font-archivo);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +51,19 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* The trade colours, and soft tints of each for backgrounds. */
+  --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-frost: var(--frost);
+  --color-frost-soft: var(--frost-soft);
+  --color-aqua: var(--aqua);
+  --color-aqua-soft: var(--aqua-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,72 +74,102 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.5rem;
+
+  --background: #f4f6f9; /* paper */
+  --foreground: #14213d; /* ink */
+  --card: #ffffff;
+  --card-foreground: #14213d;
+  --popover: #ffffff;
+  --popover-foreground: #14213d;
+  --primary: #14213d;
+  --primary-foreground: #f4f6f9;
+  --secondary: #e6ebf2;
+  --secondary-foreground: #14213d;
+  --muted: #e9edf3;
+  --muted-foreground: #56657c; /* slate */
+  --accent: #e3e9f2;
+  --accent-foreground: #14213d;
+  --destructive: #c8312b;
+  --border: #d9e0ea;
+  --input: #cbd4e1;
+  --ring: #1e88e5;
+
+  --ember: #e85d22;
+  --ember-soft: #fde9df;
+  --frost: #1e7fd6;
+  --frost-soft: #e1eefb;
+  --aqua: #0f8f87;
+  --aqua-soft: #ddf3f1;
+  --success: #23855a;
+  --success-soft: #dff2e8;
+  --warning: #a86f00;
+  --warning-soft: #fbefd5;
+
+  --thermal: linear-gradient(in oklch 100deg, var(--ember), var(--frost));
+
+  --chart-1: #1e7fd6;
+  --chart-2: #e85d22;
+  --chart-3: #0f8f87;
+  --chart-4: #6b5bd2;
+  --chart-5: #a86f00;
+
+  /* The sidebar is ink-navy in both themes: the app's spine. */
+  --sidebar: #14213d;
+  --sidebar-foreground: #c3cddd;
+  --sidebar-primary: #ef6a2c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1f3157;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #22355c;
+  --sidebar-ring: #4ba3f0;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0f1b2e; /* after hours */
+  --foreground: #e7ecf3;
+  --card: #15233a;
+  --card-foreground: #e7ecf3;
+  --popover: #18273f;
+  --popover-foreground: #e7ecf3;
+  --primary: #e7ecf3;
+  --primary-foreground: #0f1b2e;
+  --secondary: #1c2c46;
+  --secondary-foreground: #e7ecf3;
+  --muted: #1a2940;
+  --muted-foreground: #96a5bb;
+  --accent: #213350;
+  --accent-foreground: #e7ecf3;
+  --destructive: #f0605a;
+  --border: #24354f;
+  --input: #2d4060;
+  --ring: #4ba3f0;
+
+  --ember: #f47a3e;
+  --ember-soft: #3a2420;
+  --frost: #4ba3f0;
+  --frost-soft: #16304d;
+  --aqua: #2bb5ab;
+  --aqua-soft: #12343a;
+  --success: #3fbf86;
+  --success-soft: #13342a;
+  --warning: #e3ad3b;
+  --warning-soft: #392d14;
+
+  --chart-1: #4ba3f0;
+  --chart-2: #f47a3e;
+  --chart-3: #2bb5ab;
+  --chart-4: #9a8cf0;
+  --chart-5: #e3ad3b;
+
+  --sidebar: #0a1424;
+  --sidebar-foreground: #b4c0d2;
+  --sidebar-primary: #f47a3e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #17253c;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #16243a;
+  --sidebar-ring: #4ba3f0;
 }
 
 @layer base {
@@ -123,11 +178,63 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01";
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
+  }
+  /* Numbers line up in tables, times and money. */
+  table,
+  time,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /*
+   * Display type: Archivo at its widest and heaviest, like lettering on the side of a service
+   * truck. Used for page titles and the landing headline, nowhere else.
+   */
+  .type-display {
+    text-wrap: balance;
+    font-stretch: 125%;
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  .type-title {
+    text-wrap: balance;
+    font-stretch: 112%;
+    font-weight: 720;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+
+  /*
+   * "A model wrote this." A one-pixel ember-to-frost frame around AI-drafted content. Built with a
+   * masked pseudo-element so the content keeps its own background and radius.
+   */
+  .ai-drafted {
+    position: relative;
+    isolation: isolate;
+  }
+  .ai-drafted::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--thermal);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
   }
 }
