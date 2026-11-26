@@ -25,5 +25,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Skip the API and hub rewrites, Next.js internals and static files.
-  matcher: ["/((?!api|hubs|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp|ico)$).*)"],
+  matcher: ["/((?!api|hubs|maplibre|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp|ico)$).*)"],
 };
