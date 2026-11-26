@@ -15,6 +15,7 @@
     <PackageReference Include="Anthropic" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="NRedisStack" />
     <PackageReference Include="OllamaSharp" />
   </ItemGroup>
 

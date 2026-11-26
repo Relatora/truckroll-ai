@@ -32,6 +32,15 @@ public sealed class AiOptions
     /// </summary>
     public int EmbeddingDimensions { get; set; } = 768;
 
+    /// <summary>
+    /// Put before every passage that's indexed. nomic-embed-text was trained with task prefixes and
+    /// ranks noticeably worse without them; another model may want different ones, or none.
+    /// </summary>
+    public string EmbeddingDocumentPrefix { get; set; } = "search_document: ";
+
+    /// <summary>Put before every search query. The pair to <see cref="EmbeddingDocumentPrefix"/>.</summary>
+    public string EmbeddingQueryPrefix { get; set; } = "search_query: ";
+
     public ClaudeOptions Claude { get; set; } = new();
 }
 

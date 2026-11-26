@@ -4,6 +4,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Truckroll.Api.Ai;
 using Truckroll.Api.Data;
+using Truckroll.Api.Knowledge;
 using Truckroll.Data;
 using Truckroll.Data.Seed;
 
@@ -37,7 +38,28 @@ public static class DevEndpoints
             .WithSummary("Call the chat model and the embedder once each and report what answered (development only).")
             .ExcludeFromDescription();
 
+        // "One command indexes the seed": also a "Rebuild knowledge index" button in the dashboard.
+        routes.MapPost("/dev/reindex", ReindexAsync)
+            .WithName("Reindex")
+            .WithSummary("Rebuild the knowledge index from MySQL and report what it took (development only).")
+            .ExcludeFromDescription();
+
         return routes;
+    }
+
+    internal static async Task<IResult> ReindexAsync(KnowledgeQueue queue)
+    {
+        try
+        {
+            return Results.Ok(await queue.RebuildAsync());
+        }
+        catch (HttpRequestException exception)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "The embedding model isn't reachable",
+                detail: exception.Message);
+        }
     }
 
     internal static async Task<IResult> AiCheckAsync(
@@ -57,7 +79,7 @@ public static class DevEndpoints
             var chatMilliseconds = clock.ElapsedMilliseconds;
 
             clock.Restart();
-            var vector = await embedder.GenerateVectorAsync("Carrier 59SC5 ignitor keeps failing", cancellationToken: cancellationToken);
+            var vector = await embedder.GenerateVectorAsync("Calderon CAL-80 ignitor keeps failing", cancellationToken: cancellationToken);
             var embedMilliseconds = clock.ElapsedMilliseconds;
 
             var chatInfo = chat.GetService<ChatClientMetadata>();
@@ -90,7 +112,7 @@ public static class DevEndpoints
         }
     }
 
-    internal static async Task<IResult> ResetDemoAsync(TruckrollDbContext db, IConfiguration configuration, ILogger<TruckrollDbContext> logger, CancellationToken cancellationToken)
+    internal static async Task<IResult> ResetDemoAsync(TruckrollDbContext db, KnowledgeQueue knowledge, IConfiguration configuration, ILogger<TruckrollDbContext> logger, CancellationToken cancellationToken)
     {
         var today = DataServiceExtensions.DemoToday(configuration);
 
@@ -98,7 +120,11 @@ public static class DevEndpoints
         await db.Database.MigrateAsync(cancellationToken);
         await DemoSeeder.SeedIfEmptyAsync(db, today, cancellationToken: cancellationToken);
 
+        // Every record has a new id now, so the old passages point at nothing. Rebuild in the
+        // background; the reset itself shouldn't wait a minute for the embedder.
+        knowledge.RequestRebuild();
+
         logger.LogInformation("Demo data reset for {Today}", today);
-        return Results.Ok(new { seededFor = today });
+        return Results.Ok(new { seededFor = today, knowledgeIndex = "rebuilding" });
     }
 }
