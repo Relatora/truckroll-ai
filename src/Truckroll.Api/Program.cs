@@ -10,6 +10,7 @@ using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Features.Status;
+using Truckroll.Api.Knowledge;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,9 @@ builder.AddRedisClient("redis");
 
 // Chat and embedding models: Ollama by default, Claude for chat by setting (docs/adr/004).
 builder.AddTruckrollAi();
+
+// The search index in Redis, kept in step with MySQL by a background worker (docs/adr/003).
+builder.Services.AddTruckrollKnowledge();
 
 builder.Services.AddTruckrollAccess();
 builder.Services.AddSingleton<CompanyClock>();

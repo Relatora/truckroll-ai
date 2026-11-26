@@ -39,6 +39,15 @@ dotnet user-secrets --project src/Truckroll.Api set "AI:Claude:ApiKey" <your key
 and reports which models answered and how long each took. Each call shows up as a span in the
 Aspire dashboard's traces.
 
+### Search index
+
+On first start, the API embeds every manual section, piece of equipment and job into a Redis
+search index. That's about 2,300 passages, and takes about 40 seconds once the embedding model is
+loaded. After that, a job is re-indexed seconds after it changes. Phone numbers and emails are
+masked before anything is embedded. To rebuild the index by hand, use the **Rebuild knowledge
+index** button on the `api` resource in the Aspire dashboard, or `POST /api/dev/reindex`. See
+[ADR-003](docs/adr/003-retrieval-in-redis.md).
+
 ## Quality gate
 
 ```powershell

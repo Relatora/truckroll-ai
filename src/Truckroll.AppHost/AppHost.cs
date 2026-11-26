@@ -19,7 +19,10 @@ var database = mysql.AddDatabase("truckroll");
 // which is what retrieval needs. Pinned, because Aspire's default tag moves between releases.
 var redis = builder.AddRedis("redis")
     .WithImageTag("8.12")
-    .WithDataVolume("truckroll-redis");
+    .WithDataVolume("truckroll-redis")
+    // The image's own entrypoint loads the Query Engine module, but Aspire starts redis-server
+    // with its own command line (for the password and TLS), which skips it. Ask for it by name.
+    .WithModule(RedisModules.Search);
 
 // Ollama runs on the host, not in a container, so it can use the GPU. Its address comes from
 // configuration (ConnectionStrings:ollama in appsettings.json), which keeps a machine without
@@ -41,6 +44,16 @@ var api = builder.AddDotnetProject("api", "../Truckroll.Api/Truckroll.Api.csproj
             Description = "Drop the database and re-seed Kestrel Home Comfort for today.",
             ConfirmationMessage = "Wipe the database and re-seed the demo data?",
             IconName = "ArrowCounterclockwise",
+        })
+    // Rebuilds the Redis search index from MySQL: every manual section, unit and job, embedded.
+    .WithHttpCommand(
+        path: "/api/dev/reindex",
+        displayName: "Rebuild knowledge index",
+        commandOptions: new HttpCommandOptions
+        {
+            Method = HttpMethod.Post,
+            Description = "Re-embed every document, unit and job into the Redis search index.",
+            IconName = "DatabaseSearch",
         });
 
 // Next.js rewrites /api and /hubs to API_URL, so the browser only ever sees one origin and

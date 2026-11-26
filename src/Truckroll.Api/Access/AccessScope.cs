@@ -36,6 +36,13 @@ public sealed class AccessScope
     /// <summary>The scope of someone who isn't signed in: sees nothing.</summary>
     public static AccessScope Anonymous { get; } = new(null, "", null, null, null);
 
+    /// <summary>
+    /// The system's own scope: every record. Only for work no person asked for, like building the
+    /// search index (which then filters every result through the asker's scope, #12). Never hand it
+    /// to a request; search for <c>AccessScope.System</c> to audit who uses it.
+    /// </summary>
+    public static AccessScope System { get; } = new(null, "Truckroll", UserRole.Owner, null, null);
+
     public string? UserId { get; }
     public string DisplayName { get; }
     public UserRole? Role { get; }
