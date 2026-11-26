@@ -1,11 +1,14 @@
 "use client";
 
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ApiError } from "@/lib/api";
 
-/** Client-side providers for the whole app: server state through TanStack Query. */
+/** Client-side providers for the whole app: theme, server state, tooltips and toasts. */
 export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
@@ -29,5 +32,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return client;
   });
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider delayDuration={300}>
+          {children}
+          <Toaster position="bottom-right" />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
 }
