@@ -32,6 +32,7 @@ fi
 if $run_web; then
   cd web
   step 'eslint' npm run lint --silent
+  step 'typegen' npx next typegen
   step 'tsc' npx tsc --noEmit
   step 'next build' npm run build --silent
   cd ..
