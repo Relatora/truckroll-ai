@@ -37,14 +37,14 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="rounded-full bg-[image:var(--thermal)] p-[2px] transition-transform duration-200 ease-[var(--ease-spring)] hover:scale-105 active:scale-95 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         aria-label={`Account menu for ${me.displayName}`}
       >
-        <Avatar className="size-9">
+        <Avatar className="size-9 border-2 border-background">
           <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">{initials}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="end" className="glass-strong w-64 rounded-xl">
         <DropdownMenuLabel className="font-normal">
           <p className="font-semibold">{me.displayName}</p>
           <p className="text-muted-foreground">

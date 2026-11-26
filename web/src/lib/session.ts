@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
+import { useHydrated } from "./use-hydrated";
 
 /** Mirrors MeResponse in Truckroll.Api/Features/Auth/AuthEndpoints.cs. */
 export type Role = "Owner" | "BranchManager" | "Dispatcher" | "Csr" | "Technician";
@@ -29,14 +30,22 @@ export const roleLabels: Record<Role, string> = {
   Technician: "Technician",
 };
 
-/** The signed-in person. Cached for the session; sign-in and sign-out reset it. */
+/**
+ * The signed-in person. Cached for the session; sign-in and sign-out reset it.
+ *
+ * The server never knows who's signed in (the page shell is the same for everyone), so until
+ * hydration finishes this reports "still loading" even if the cache already has the answer.
+ * Otherwise the first client render could differ from the server's HTML.
+ */
 export function useMe() {
-  return useQuery({
+  const hydrated = useHydrated();
+  const query = useQuery({
     queryKey: ["me"],
     queryFn: () => api<Me>("/auth/me"),
     staleTime: 5 * 60_000,
     retry: false,
   });
+  return hydrated ? query : { ...query, data: undefined, isPending: true as const };
 }
 
 export function signIn(email: string, password: string) {

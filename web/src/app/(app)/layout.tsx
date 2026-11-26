@@ -1,26 +1,28 @@
-import { AppSidebar } from "@/components/shell/app-sidebar";
+import { Aurora } from "@/components/brand/aurora";
+import { ThemeSwitch } from "@/components/motion/theme-switch";
 import { CommandMenu } from "@/components/shell/command-menu";
+import { Dock } from "@/components/shell/dock";
 import { UserMenu } from "@/components/shell/user-menu";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 /**
- * The signed-in app: the navy sidebar, a top bar with search (⌘K) and the account menu, and the
- * page. The proxy has already bounced anyone without a session cookie.
+ * The signed-in workspace. No sidebar: a floating dock for navigation, a floating command bar as
+ * the fastest way anywhere, and the page given the full width under a calm aurora.
  */
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="bg-background">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:px-6">
-          <SidebarTrigger className="-ml-1" />
-          <div className="flex flex-1 justify-center md:justify-start">
+    <>
+      <Aurora calm />
+      <Dock />
+      <div className="flex min-h-svh flex-1 flex-col md:pl-24">
+        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-2 md:px-8">
+          <div className="flex flex-1 justify-center">
             <CommandMenu />
           </div>
+          <ThemeSwitch />
           <UserMenu />
         </header>
-        <div className="flex flex-1 flex-col px-4 py-6 md:px-8 md:py-8">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+        <main className="flex flex-1 flex-col px-4 pt-6 pb-28 md:px-8 md:pb-12">{children}</main>
+      </div>
+    </>
   );
 }

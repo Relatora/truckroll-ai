@@ -3,16 +3,19 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Truckroll's design tokens.
+ * Truckroll's design system: "a living thermostat".
  *
- * The palette comes from the trade: heating and cooling. Ember marks heat and urgency (furnaces,
- * boilers, emergencies), frost marks cooling (air conditioners, heat pumps), aqua marks water
- * (plumbing, water heaters). Colour always carries one of those meanings; it's never decoration.
+ * The interface behaves like the thing the business sells. It has a temperature (an ambient
+ * aurora in the trade colours), it responds to touch (springy presses, glows that follow the
+ * cursor), and it's built in layers of frosted glass with real depth.
  *
- * The one gradient, ember to frost ("thermal"), is reserved for text and suggestions the AI
- * drafted. Seeing it means "a model wrote this, a person decides".
+ * Two moods, not one palette inverted:
+ *   Daylight     pearl white, soft peach and ice-blue light, crisp layered shadows.
+ *   After hours  near-black night, luminous ember and frost glows, glass that catches light.
  *
- * Light mode is cool paper with navy ink. Dark mode is "after hours": a deep night blue, not black.
+ * Colour still carries meaning. Ember is heat and urgency, frost is cooling, aqua is water.
+ * The thermal gradient (ember, violet, frost) is the brand's signature and frames anything a
+ * model wrote, so AI output is always recognisable.
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -20,8 +23,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-archivo);
-  --font-heading: var(--font-archivo);
+  --font-sans: var(--font-figtree);
+  --font-heading: var(--font-bricolage);
+  --font-display: var(--font-bricolage);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -52,17 +56,20 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* The trade colours, and soft tints of each for backgrounds. */
   --color-ember: var(--ember);
   --color-ember-soft: var(--ember-soft);
   --color-frost: var(--frost);
   --color-frost-soft: var(--frost-soft);
   --color-aqua: var(--aqua);
   --color-aqua-soft: var(--aqua-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -71,105 +78,149 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* ------------------------------------------------------------------ Daylight */
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --background: #f4f6f9; /* paper */
-  --foreground: #14213d; /* ink */
+  --background: #f6f7fb;
+  --foreground: #0e1526;
   --card: #ffffff;
-  --card-foreground: #14213d;
-  --popover: #ffffff;
-  --popover-foreground: #14213d;
-  --primary: #14213d;
-  --primary-foreground: #f4f6f9;
-  --secondary: #e6ebf2;
-  --secondary-foreground: #14213d;
-  --muted: #e9edf3;
-  --muted-foreground: #56657c; /* slate */
-  --accent: #e3e9f2;
-  --accent-foreground: #14213d;
-  --destructive: #c8312b;
-  --border: #d9e0ea;
-  --input: #cbd4e1;
-  --ring: #1e88e5;
+  --card-foreground: #0e1526;
+  --popover: rgb(255 255 255 / 0.92);
+  --popover-foreground: #0e1526;
+  --primary: #0e1526;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f7;
+  --secondary-foreground: #0e1526;
+  --muted: #eef1f7;
+  --muted-foreground: #586278;
+  --accent: rgb(14 21 38 / 0.05);
+  --accent-foreground: #0e1526;
+  --destructive: #d92d20;
+  --border: rgb(14 21 38 / 0.09);
+  --input: rgb(14 21 38 / 0.14);
+  --ring: #2f8bff;
 
-  --ember: #e85d22;
-  --ember-soft: #fde9df;
-  --frost: #1e7fd6;
-  --frost-soft: #e1eefb;
-  --aqua: #0f8f87;
-  --aqua-soft: #ddf3f1;
-  --success: #23855a;
-  --success-soft: #dff2e8;
-  --warning: #a86f00;
-  --warning-soft: #fbefd5;
+  --ember: #f25f1c;
+  --ember-soft: #ffe8dc;
+  --frost: #1f7aec;
+  --frost-soft: #e2eeff;
+  --aqua: #0e9f90;
+  --aqua-soft: #d9f5f1;
+  --violet: #6d4ef5;
+  --violet-soft: #ece7ff;
+  --success: #12875a;
+  --success-soft: #dcf4e9;
+  --warning: #b07100;
+  --warning-soft: #fdf0d6;
 
-  --thermal: linear-gradient(in oklch 100deg, var(--ember), var(--frost));
+  --glass: rgb(255 255 255 / 0.6);
+  --glass-strong: rgb(255 255 255 / 0.82);
+  --glass-edge: rgb(255 255 255 / 0.9);
+  --glass-line: rgb(14 21 38 / 0.07);
 
-  --chart-1: #1e7fd6;
-  --chart-2: #e85d22;
-  --chart-3: #0f8f87;
-  --chart-4: #6b5bd2;
-  --chart-5: #a86f00;
+  --shadow-float:
+    0 1px 1px rgb(14 21 38 / 0.04), 0 6px 16px -6px rgb(14 21 38 / 0.12), 0 28px 60px -24px rgb(14 21 38 / 0.22);
+  --shadow-lift:
+    0 1px 1px rgb(14 21 38 / 0.04), 0 12px 28px -10px rgb(14 21 38 / 0.18), 0 40px 80px -30px rgb(14 21 38 / 0.28);
 
-  /* The sidebar is ink-navy in both themes: the app's spine. */
-  --sidebar: #14213d;
-  --sidebar-foreground: #c3cddd;
-  --sidebar-primary: #ef6a2c;
+  --aurora-a: #ffb48a;
+  --aurora-b: #9cc9ff;
+  --aurora-c: #c9b8ff;
+  --aurora-d: #a6ebdd;
+  --aurora-strength: 0.65;
+  --grain-opacity: 0.05;
+
+  --thermal: linear-gradient(in oklch 115deg, var(--ember), var(--violet), var(--frost));
+
+  --chart-1: #1f7aec;
+  --chart-2: #f25f1c;
+  --chart-3: #0e9f90;
+  --chart-4: #6d4ef5;
+  --chart-5: #b07100;
+
+  --sidebar: var(--glass-strong);
+  --sidebar-foreground: #0e1526;
+  --sidebar-primary: #0e1526;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1f3157;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #22355c;
-  --sidebar-ring: #4ba3f0;
+  --sidebar-accent: rgb(14 21 38 / 0.06);
+  --sidebar-accent-foreground: #0e1526;
+  --sidebar-border: var(--glass-line);
+  --sidebar-ring: #2f8bff;
 }
 
+/* ------------------------------------------------------------------ After hours */
+
 .dark {
-  --background: #0f1b2e; /* after hours */
-  --foreground: #e7ecf3;
-  --card: #15233a;
-  --card-foreground: #e7ecf3;
-  --popover: #18273f;
-  --popover-foreground: #e7ecf3;
-  --primary: #e7ecf3;
-  --primary-foreground: #0f1b2e;
-  --secondary: #1c2c46;
-  --secondary-foreground: #e7ecf3;
-  --muted: #1a2940;
-  --muted-foreground: #96a5bb;
-  --accent: #213350;
-  --accent-foreground: #e7ecf3;
-  --destructive: #f0605a;
-  --border: #24354f;
-  --input: #2d4060;
-  --ring: #4ba3f0;
+  --background: #060a14;
+  --foreground: #edf1fa;
+  --card: #0e1527;
+  --card-foreground: #edf1fa;
+  --popover: rgb(15 22 40 / 0.9);
+  --popover-foreground: #edf1fa;
+  --primary: #edf1fa;
+  --primary-foreground: #060a14;
+  --secondary: #131b31;
+  --secondary-foreground: #edf1fa;
+  --muted: #121a2e;
+  --muted-foreground: #8f9ab3;
+  --accent: rgb(255 255 255 / 0.06);
+  --accent-foreground: #edf1fa;
+  --destructive: #ff6b5e;
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: #5aa2ff;
 
-  --ember: #f47a3e;
-  --ember-soft: #3a2420;
-  --frost: #4ba3f0;
-  --frost-soft: #16304d;
-  --aqua: #2bb5ab;
-  --aqua-soft: #12343a;
-  --success: #3fbf86;
-  --success-soft: #13342a;
-  --warning: #e3ad3b;
-  --warning-soft: #392d14;
+  --ember: #ff7a3d;
+  --ember-soft: rgb(255 122 61 / 0.14);
+  --frost: #4c9dff;
+  --frost-soft: rgb(76 157 255 / 0.14);
+  --aqua: #2dd4bf;
+  --aqua-soft: rgb(45 212 191 / 0.13);
+  --violet: #9b85ff;
+  --violet-soft: rgb(155 133 255 / 0.15);
+  --success: #34d399;
+  --success-soft: rgb(52 211 153 / 0.13);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / 0.13);
 
-  --chart-1: #4ba3f0;
-  --chart-2: #f47a3e;
-  --chart-3: #2bb5ab;
-  --chart-4: #9a8cf0;
-  --chart-5: #e3ad3b;
+  --glass: rgb(16 23 42 / 0.55);
+  --glass-strong: rgb(16 23 42 / 0.78);
+  --glass-edge: rgb(255 255 255 / 0.1);
+  --glass-line: rgb(255 255 255 / 0.07);
 
-  --sidebar: #0a1424;
-  --sidebar-foreground: #b4c0d2;
-  --sidebar-primary: #f47a3e;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #17253c;
+  --shadow-float:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 10px 30px -12px rgb(0 0 0 / 0.7), 0 30px 70px -30px rgb(0 0 0 / 0.8);
+  --shadow-lift:
+    inset 0 1px 0 rgb(255 255 255 / 0.07), 0 18px 40px -14px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.04);
+
+  --aurora-a: #ff6a2a;
+  --aurora-b: #2f6bff;
+  --aurora-c: #7c3aed;
+  --aurora-d: #14b8a6;
+  --aurora-strength: 0.32;
+  --grain-opacity: 0.07;
+
+  --chart-1: #4c9dff;
+  --chart-2: #ff7a3d;
+  --chart-3: #2dd4bf;
+  --chart-4: #9b85ff;
+  --chart-5: #fbbf24;
+
+  --sidebar: var(--glass-strong);
+  --sidebar-foreground: #edf1fa;
+  --sidebar-primary: #edf1fa;
+  --sidebar-primary-foreground: #060a14;
+  --sidebar-accent: rgb(255 255 255 / 0.07);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #16243a;
-  --sidebar-ring: #4ba3f0;
+  --sidebar-border: var(--glass-line);
+  --sidebar-ring: #5aa2ff;
 }
 
 @layer base {
@@ -178,7 +229,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01";
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -186,55 +236,243 @@
   }
   html {
     @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
   }
-  /* Numbers line up in tables, times and money. */
   table,
   time,
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+  ::selection {
+    background: color-mix(in oklch, var(--frost) 28%, transparent);
+  }
 }
 
-@layer components {
-  /*
-   * Display type: Archivo at its widest and heaviest, like lettering on the side of a service
-   * truck. Used for page titles and the landing headline, nowhere else.
-   */
-  .type-display {
-    text-wrap: balance;
-    font-stretch: 125%;
-    font-weight: 820;
-    letter-spacing: -0.03em;
-    line-height: 0.95;
-  }
+/* ------------------------------------------------------------------ Type */
 
-  .type-title {
-    text-wrap: balance;
-    font-stretch: 112%;
-    font-weight: 720;
-    letter-spacing: -0.015em;
-    line-height: 1.1;
-  }
+@utility type-display {
+  font-family: var(--font-bricolage);
+  font-variation-settings: "opsz" 96;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
 
-  /*
-   * "A model wrote this." A one-pixel ember-to-frost frame around AI-drafted content. Built with a
-   * masked pseudo-element so the content keeps its own background and radius.
-   */
-  .ai-drafted {
-    position: relative;
-    isolation: isolate;
-  }
-  .ai-drafted::before {
+@utility type-title {
+  font-family: var(--font-bricolage);
+  font-variation-settings: "opsz" 48;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+/* Text painted with the thermal gradient, for one or two words of brand voice at a time. */
+@utility text-thermal {
+  background: var(--thermal);
+  background-clip: text;
+  color: transparent;
+}
+
+/* ------------------------------------------------------------------ Glass and depth */
+
+@utility glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-float), inset 0 1px 0 var(--glass-edge);
+}
+
+@utility glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 var(--glass-edge);
+}
+
+@utility shadow-float {
+  box-shadow: var(--shadow-float);
+}
+
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+
+@utility glow-ember {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--ember) 40%, transparent),
+    0 10px 40px -8px color-mix(in oklch, var(--ember) 65%, transparent);
+}
+
+@utility glow-frost {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--frost) 40%, transparent),
+    0 10px 40px -8px color-mix(in oklch, var(--frost) 60%, transparent);
+}
+
+/* ------------------------------------------------------------------ The spotlight
+ * Cards light up where the pointer is. SpotlightCard sets --mx/--my; this paints a soft light
+ * there and brightens the border under it. Pure CSS after that, so it costs nothing at rest.
+ */
+@utility spotlight {
+  position: relative;
+  isolation: isolate;
+  &::before {
     content: "";
     position: absolute;
     inset: 0;
-    padding: 1px;
+    z-index: -1;
     border-radius: inherit;
-    background: var(--thermal);
+    opacity: 0;
+    transition: opacity 300ms var(--ease-out-expo);
+    background: radial-gradient(
+      420px circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in oklch, var(--frost) 14%, transparent),
+      transparent 60%
+    );
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    opacity: 0;
+    transition: opacity 300ms var(--ease-out-expo);
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in oklch, var(--frost) 70%, transparent),
+      transparent 70%
+    );
     mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     mask-composite: exclude;
     pointer-events: none;
+  }
+  &:hover::before,
+  &:hover::after,
+  &:focus-within::before,
+  &:focus-within::after {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------------ AI-drafted
+ * "A model wrote this." A thermal outline, which slowly turns while the model is still writing
+ * (data-generating) and rests once it's done.
+ */
+@property --ai-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@utility ai-drafted {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--ai-angle),
+      var(--ember),
+      var(--violet),
+      var(--frost),
+      var(--aqua),
+      var(--ember)
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  &[data-generating="true"]::before {
+    animation: ai-turn 2.4s linear infinite;
+  }
+}
+
+@keyframes ai-turn {
+  to {
+    --ai-angle: 360deg;
+  }
+}
+
+/* ------------------------------------------------------------------ Buttons
+ * A sheen sweeps across primary buttons on hover, like light across a glossy truck door.
+ */
+@utility sheen {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.45) 50%, transparent 65%);
+    transform: translateX(-120%);
+    transition: transform 700ms var(--ease-out-expo);
+    pointer-events: none;
+  }
+  &:hover::after {
+    transform: translateX(120%);
+  }
+}
+
+/* ------------------------------------------------------------------ Aurora
+ * Four large, blurred lights drifting on long loops. Only transforms animate, so the GPU does
+ * all the work. Each light has its own period so the pattern never visibly repeats.
+ */
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(-10%, -8%, 0) scale(1); }
+  50% { transform: translate3d(12%, 10%, 0) scale(1.15); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(8%, 6%, 0) scale(1.1); }
+  50% { transform: translate3d(-14%, -6%, 0) scale(0.95); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(0, 12%, 0) scale(0.95); }
+  50% { transform: translate3d(-8%, -12%, 0) scale(1.2); }
+}
+@keyframes drift-d {
+  0%, 100% { transform: translate3d(10%, -10%, 0) scale(1.05); }
+  50% { transform: translate3d(-6%, 14%, 0) scale(0.9); }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* The theme switch's circular reveal: let the new view draw on top, with no cross-fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@keyframes stripe-slide {
+  to {
+    background-position: 28px 0;
   }
 }
