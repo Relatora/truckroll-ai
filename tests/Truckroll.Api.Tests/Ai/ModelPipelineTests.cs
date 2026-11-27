@@ -45,10 +45,13 @@ public sealed class ModelPipelineTests(TruckrollApiFactory factory)
         };
         ActivitySource.AddActivityListener(listener);
 
+        // Other tests call the model in parallel, and their spans land in the same listener. A
+        // parent activity of our own gives this call's span a trace id nobody else has.
+        using var parent = new Activity("span-check").Start();
         await Chat.GetResponseAsync($"Customer 905-555-0142 asks about {marker}", cancellationToken: TestContext.Current.CancellationToken);
 
-        var span = Assert.Single(spans, s => s.DisplayName == $"chat {FakeChatClient.ModelId}" && s.GetTagItem("gen_ai.usage.output_tokens") is not null
-            && s.TagObjects.All(tag => tag.Value?.ToString()?.Contains(marker, StringComparison.Ordinal) != true));
+        var span = Assert.Single(spans, s => s.TraceId == parent.TraceId && s.DisplayName == $"chat {FakeChatClient.ModelId}");
+        Assert.NotNull(span.GetTagItem("gen_ai.usage.output_tokens"));
         Assert.Equal(FakeChatClient.ModelId, span.GetTagItem("gen_ai.request.model"));
 
         // Sensitive data is off: no tag or event on any span carries the prompt.

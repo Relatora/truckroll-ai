@@ -2,16 +2,17 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
+import { Suspense } from "react";
+import { BranchNumbers } from "@/components/dashboard/branch-numbers";
 import { SpotlightCard } from "@/components/motion/spotlight-card";
 import { Reveal, RevealItem } from "@/components/motion/reveal";
-import { NotBuiltYet } from "@/components/shell/not-built-yet";
 import { navigationFor, toneStyles } from "@/components/shell/navigation";
 import { roleLabels, useMe } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 /**
  * Where everyone lands after signing in: a greeting, and every place their day happens as a
- * tile that lights up under the cursor. The owner dashboard (#17) joins it later.
+ * tile that lights up under the cursor. Owners and branch managers also get their branch numbers.
  */
 export default function OverviewPage() {
   const { data: me } = useMe();
@@ -24,7 +25,7 @@ export default function OverviewPage() {
   const pages = navigationFor(me).filter((item) => item.href !== "/dashboard");
 
   return (
-    <Reveal className="mx-auto w-full max-w-5xl">
+    <Reveal className="mx-auto w-full max-w-6xl">
       <RevealItem className="mb-10">
         <p className="text-sm font-medium text-muted-foreground">
           {roleLabels[me.role]}, {me.branch ? `${me.branch.name} branch` : "all five branches"}
@@ -55,14 +56,13 @@ export default function OverviewPage() {
         ))}
       </div>
 
+      {/* Owners and branch managers get their numbers under the shortcuts. The filters live in
+          the URL, which needs a Suspense boundary under cacheComponents. */}
       {me.can.canSeeFinancials && (
-        <RevealItem className="mt-10">
-          <NotBuiltYet
-            title="Branch numbers"
-            description="Jobs, first-time-fix rate, revenue and renewals across your branches."
-            issue={17}
-            embedded
-          />
+        <RevealItem className="mt-12">
+          <Suspense>
+            <BranchNumbers owner={me.role === "Owner"} />
+          </Suspense>
         </RevealItem>
       )}
     </Reveal>
