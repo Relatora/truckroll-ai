@@ -65,6 +65,15 @@ public sealed class FusionTests
     }
 
     [Theory]
+    [InlineData("What did we install at 14 Maple St?", "14 maple st")]
+    [InlineData("boiler at 88 birch cres and 231 Lakeview Drive", "88 birch cres,231 lakeview drive")]
+    [InlineData("Which furnaces keep failing in 2026?", "")]
+    public void Street_addresses_are_found_for_an_exact_phrase_match(string question, string expected)
+    {
+        Assert.Equal(expected.Split(',', StringSplitOptions.RemoveEmptyEntries), AddressesIn(question));
+    }
+
+    [Theory]
     [InlineData("status of j-24051?", "J-24051")]
     [InlineData("Is CAL80-20-04417 under bulletin SB-2024-07", "CAL80-20-04417,SB-2024-07")]
     [InlineData("what does W-KESTREL cover", "W-KESTREL")]

@@ -403,6 +403,50 @@
   }
 }
 
+/* "Working on it": a band of light runs through the text. Reduced motion leaves it still. */
+@utility shimmer-text {
+  background: linear-gradient(
+      100deg,
+      var(--muted-foreground) 40%,
+      var(--foreground) 50%,
+      var(--muted-foreground) 60%
+    )
+    0 0 / 250% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.8s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+/* A caret after the last word while a model is still writing. */
+@utility streaming-caret {
+  & > :last-child::after {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 1.05em;
+    margin-left: 0.15em;
+    vertical-align: -0.15em;
+    border-radius: 2px;
+    background: var(--violet);
+    animation: caret-blink 1s steps(2, start) infinite;
+  }
+}
+
+@keyframes caret-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
 /* ------------------------------------------------------------------ Buttons
  * A sheen sweeps across primary buttons on hover, like light across a glossy truck door.
  */
