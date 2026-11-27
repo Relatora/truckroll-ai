@@ -1,6 +1,7 @@
 # Truckroll: Design and Build Plan
 
-> Status: **Approved** · 2026-11-25
+> Status: **Approved** 2026-11-25. **Built** as v0.1.0 on 2026-11-27. The plan below is kept
+> as written; section 10 lists what changed on the way.
 
 ## 1. What it is
 
@@ -171,3 +172,30 @@ the expected technician in the top three for at least 90% of dispatch scenarios;
   That's why dispatch ranking is code and the model only explains.
 - **Provider churn.** Pomelo stopped at EF Core 9. If the Microting provider falls behind,
   Oracle's `MySql.EntityFrameworkCore` is the fallback (ADR-002).
+
+## 10. What changed while building it
+
+The plan held. These are the places where building it taught me something, with where each
+one is recorded.
+
+- **The model says words, code computes values.** qwen2.5:7b got weekday dates wrong, so call
+  analysis returns "Wednesday" or "today", and C# turns that into a date. The same goes for
+  customer matching: code matches by name and street; the model only reads the call.
+- **Temperature 0 for anything evaluated.** At the default temperature, the same call could
+  come back read differently from one run to the next, and an eval that moves on its own
+  measures nothing.
+- **Structured output needs the expected items named.** Asked for a list of explanations
+  without being told which technicians to explain, the small model returned an empty list.
+  The prompt now names the ids.
+- **Redis needs its search module loaded explicitly under Aspire.** Aspire skips the image's
+  entrypoint, so `WithModule(RedisModules.Search)` is in the AppHost. Testcontainers tests
+  couldn't catch it, which is why AI work also gets checked on the real stack.
+- **Booking runs at READ COMMITTED.** The job-number retry (MAX + 1, then retry on a
+  duplicate) kept failing under MySQL's default REPEATABLE READ, because a retry inside the
+  same transaction reads the same old snapshot and picks the same number.
+- **The MCP server has seven tools, not six plus "a write tool".** The write tool is
+  `create_draft_note`, and it creates a draft job note, never a message to a customer.
+- **Drag and drop needed a real browser to test.** The Playwright suite found that a real mouse
+  couldn't drag a job on the board, which no unit test or keyboard walkthrough showed (#18).
+- **ADR-005 was written with the code,** as planned: in-process `JobChanged` events now, an
+  outbox and Kafka in v0.2.

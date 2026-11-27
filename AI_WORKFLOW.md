@@ -10,7 +10,8 @@ who opens the PR owns every line in it, however it was written.
 ## 1. Coding with an assistant
 
 Use one. Most of us are faster with an assistant for scaffolding, tests, refactors, reading
-unfamiliar code and first drafts of docs. The rules keep the quality bar where it is.
+unfamiliar code and first drafts of docs. The rules are about keeping the quality bar where it
+is.
 
 **You review it before anyone else does.** If you couldn't explain a line in review, it
 doesn't go in the PR. "The assistant wrote it" is not an answer to a review question.
@@ -21,14 +22,16 @@ test that asserts whatever the code happens to do, rather than what it should do
 
 **Watch for the usual failure modes:**
 
-- APIs that don't exist, or exist in another version. .NET and Next.js both move fast; check
-  against the package you actually restored, not the assistant's memory. For example, Aspire 17
-  made `AddProject<T>` obsolete, and assistants trained before that still suggest it.
-- Authorization quietly dropped. A query that reads `db.Customers` without going through the
-  Access layer is the most expensive bug in this codebase. Reviewers check it on every PR.
-- Confident comments that describe what the code should do rather than what it does.
-- Plausible but wrong trade details, like a made-up licence class or a warranty term nobody
-  asked for.
+- **APIs that don't exist, or exist in another version.** .NET 10, EF Core 10 and Next.js 16
+  all changed things an assistant's memory may not know: Aspire 17 made `AddProject<T>`
+  obsolete, and assistants trained before that still suggest it. Check the installed package
+  (the Next.js docs ship in `node_modules/next/dist/docs/`), not the assistant's recollection.
+- **Access quietly dropped.** A query on `db.Customers` instead of `scope.Customers()` is the
+  most expensive bug in this codebase. `AccessConventionTests` catches the obvious form, and
+  reviewers check the rest on every PR.
+- **Confident comments** that describe what the code should do rather than what it does.
+- **Plausible but wrong domain details,** like a licence a furnace doesn't need, or a warranty
+  rule nobody asked for.
 
 **Keep PRs small.** It's easy to generate a 2,000-line PR. Nobody can review one. The size
 guidance in [CONTRIBUTING.md](CONTRIBUTING.md) applies whatever wrote the code.
@@ -38,9 +41,10 @@ guidance in [CONTRIBUTING.md](CONTRIBUTING.md) applies whatever wrote the code.
 This applies to any assistant or model that isn't running on our own hardware.
 
 - **Customer data:** names with contact details, phone numbers, emails, addresses, door and
-  alarm codes, payment details, call recordings. Use the seeded demo data, or mask it first.
-- **Secrets:** `.env` files, user secrets, API keys, tokens, database dumps, private keys.
-- **Anything under NDA**, a supplier agreement or a customer contract.
+  alarm codes, access notes, payment details, call recordings. Use the seeded demo data, or mask it first.
+- **Secrets:** `appsettings.*.json` with real values, user secrets, API keys, tokens, database
+  dumps, private keys.
+- **Anything under NDA** or a supplier contract.
 
 If you're not sure, it doesn't go in. Ask first.
 
@@ -48,47 +52,55 @@ If you're not sure, it doesn't go in. Ask first.
 
 The same principles, built into the code so nobody has to remember them.
 
-| Principle                              | How it's enforced                                                                                         |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| The model sees only what the user may  | Retrieval and every MCP tool filter through the Access layer, inside the query                            |
-| Personal data stays out of prompts     | The PII masker runs before text is embedded or sent to a model, and again on MCP output                   |
-| Answers show their work                | Every answer cites numbered passages. "I don't know" is an acceptable answer                              |
-| Model output is data, not code         | Rendered as text, never as HTML. Never executed, never sent to a customer by itself                       |
-| A person presses approve               | Call summaries, proposed jobs and follow-ups are drafts. Nothing is created or sent without a click       |
-| Code decides, the model explains       | Dispatch ranking is deterministic C#. The model writes the reason and can't change the order              |
-| Quality is measured                    | `tools/Truckroll.Eval` scores retrieval, dispatch and extraction. Changes show a before and after         |
-| Tests never call a real model          | A fake chat client and a deterministic fake embedder. The suite runs offline, same result every time      |
-| Usage is bounded                       | Per-user rate limits on the assistant and on MCP, plus server-side timeouts on every model call           |
+| Principle                              | How it's enforced                                                                                                                                                  |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The model sees only what the user may  | Retrieval filters by branch and record inside the Redis query, through `AccessScope`. Every MCP tool runs as the token's owner                                     |
+| Contact details stay out of prompts    | `PiiMasker` runs before text is embedded or sent to a model. Call analysis masks with `PiiVault` and puts the real values back only on the server, after the model |
+| Code decides, the model explains       | Dispatch ranking is `DispatchScorer`, pure C#. The model writes one sentence per technician and can't reorder them ([ADR-007](docs/adr/007-code-ranks-the-model-explains.md)) |
+| The model says words, code computes    | Call analysis returns "Wednesday" or "today". C# turns that into a date, matches the customer and picks the equipment                                               |
+| Safety rules aren't the model's call   | A gas smell or CO alarm is raised to Emergency by code (policy P-103), whatever the model said                                                                     |
+| Answers show their work                | Every answer cites numbered passages that open in a drawer. "The sources don't say" is an acceptable answer                                                         |
+| Invented facts are thrown away         | Explanations for technicians the model wasn't asked about are dropped. Call proposals are validated before anyone sees them                                         |
+| Model output is data, not code         | Rendered as text, never as HTML. Never executed                                                                                                                    |
+| A person presses the button            | Calls stay proposals until a CSR approves them. Follow-ups go to an outbox; Truckroll has no way to send email. MCP can only add a labelled draft note              |
+| Quality is measured                    | `tools/Truckroll.Eval` scores retrieval, dispatch ranking and call extraction, each against a written bar. A change to prompts or ranking shows a before and after |
+| Tests never call a real model          | The xUnit suite uses a scripted fake chat client and a hashing embedder, so it runs offline and gives the same result every time                                   |
 
 ## 4. Agents and MCP: least privilege
 
 When an AI client acts in the CRM through MCP, treat it like a new employee on day one.
 
 - **It acts as one person.** A token belongs to a user, and every tool runs with that user's
-  role and branch. There's no service account that sees everything.
-- **Tokens open one door.** A personal access token only works on `/mcp`, not on the rest of
-  the API. It's shown once, stored hashed, and revocable in one click.
-- **Read by default.** Every tool reads, except one that writes a draft note. Drafts are
-  labelled as coming from MCP and never reach a customer by themselves.
-- **Assume the client's model is in the cloud.** Even when our own model is local, an MCP
-  client may not be. Contact details leave the server masked.
-- **New write tools need two reviewers** and a written reason in the PR for why the agent
-  needs it.
+  access. There's no service account that sees everything.
+- **Tokens open one door.** `/mcp` accepts only personal tokens, and the rest of the API
+  accepts only the browser cookie. Tokens are shown once, expire in 90 days and revoke on the
+  next call.
+- **Read by default.** Six of the seven tools only read. The one write tool,
+  `create_draft_note`, adds a note labelled as written through MCP. It can't book, assign,
+  cancel or contact anyone.
+- **Assume the client's model is in the cloud.** Even when ours is local, an MCP client may not
+  be. Contact details leave the server masked.
+- **New write tools need two reviewers** and a written reason in the PR for why an agent needs
+  it.
+
+[docs/MCP.md](docs/MCP.md) has the details.
 
 ## 5. When the model is wrong
 
-It will be. A 7B model running locally gets arithmetic wrong and sometimes over-reads a
-passage. The answer is design, not hope:
+It will be. A 7B model running locally gets dates wrong, over-reads a passage, and returns an
+empty list when a prompt is vague. The answer is design, not hope:
 
-- Do arithmetic, filtering and ranking in code or SQL, and let the model choose words.
-- Validate structured output against the schema, retry once, then fail visibly rather than
-  guess.
-- Keep prompts short and specific. A worked example in a prompt can make a small model parrot
-  the example.
-- When an answer is wrong in a way that matters, add it to the eval set so it stays fixed.
-- Tell people plainly that answers can be wrong. The assistant's input box says so.
+- Do arithmetic, dates, matching and ranking in code. Let the model read and write sentences.
+- Use temperature 0 for anything we evaluate, so a change in the score means a change in the
+  code.
+- Name what you expect back. "One entry for each of these ids: 14, 22, 31" works where "an
+  entry per technician" returned nothing.
+- When an answer is wrong in a way that matters, add it to the eval (`evals/*.json`) so it
+  stays fixed.
+- Tell users plainly that answers can be wrong. The assistant's input box says so, and every
+  drafted part of a call says which model drafted it.
 
 ## 6. Changing this document
 
-Anyone can propose a change in a PR. Changes to sections 2 and 4 need the technology lead's
+Anyone can propose a change in a PR. Changes to sections 2 and 4 need the engineering lead's
 review.
