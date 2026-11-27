@@ -24,6 +24,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip the API and hub rewrites, Next.js internals and static files.
-  matcher: ["/((?!api|hubs|maplibre|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp|ico)$).*)"],
+  // Skip the API, hub and MCP rewrites, Next.js internals and static files. MCP clients carry a
+  // token, never the sign-in cookie, so a redirect to /sign-in would only break them.
+  matcher: ["/((?!api|hubs|mcp|maplibre|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp|ico)$).*)"],
 };

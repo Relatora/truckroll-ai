@@ -12,6 +12,8 @@ using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Dispatch.Suggestions;
 using Truckroll.Api.Features.Jobs;
+using Truckroll.Api.Features.Mcp;
+using Truckroll.Api.Features.Tokens;
 using Truckroll.Api.Features.Knowledge;
 using Truckroll.Api.Features.Status;
 using Truckroll.Api.Knowledge;
@@ -38,6 +40,18 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<IJobChangeHandler, DispatchHubBroadcaster>();
 builder.Services.AddScoped<SuggestionExplainer>();
 builder.Services.AddScoped<CallAnalyser>();
+
+// MCP for AI clients: streamable HTTP, stateless (no server-side session to leak between users),
+// every tool running as the personal token's owner (docs/MCP.md).
+builder.Services.AddMcpServer(options => options.ServerInfo = new()
+{
+    Name = "truckroll",
+    Title = "Truckroll",
+    Version = "0.1.0",
+    Description = "Kestrel Home Comfort's CRM: customers, jobs, the schedule, dispatch suggestions and the knowledge base, as the token's owner.",
+})
+    .WithHttpTransport(options => options.Stateless = true)
+    .WithTools<TruckrollTools>();
 builder.Services.AddProblemDetails();
 
 // Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
@@ -76,9 +90,13 @@ crm.MapSuggestionEndpoints();
 crm.MapKnowledgeEndpoints();
 crm.MapAssistantEndpoints();
 crm.MapCallEndpoints();
+crm.MapTokenEndpoints();
 
 // Live updates for the dispatch board, behind the same cookie (DispatchHub is [Authorize]).
 app.MapHub<DispatchHub>(DispatchHub.Path);
+
+// Tokens only: a browser cookie can't drive MCP.
+app.MapMcp("/mcp").RequireAuthorization(PersonalTokenHandler.SchemeName);
 
 app.MapDefaultEndpoints();
 
