@@ -48,6 +48,18 @@ masked before anything is embedded. To rebuild the index by hand, use the **Rebu
 index** button on the `api` resource in the Aspire dashboard, or `POST /api/dev/reindex`. See
 [ADR-003](docs/adr/003-retrieval-in-redis.md).
 
+Search (`GET /api/knowledge/search`) runs three rankings at once: meaning (vectors), words (BM25)
+and exact identifiers (job, serial, model and part numbers). It fuses them, and keeps only the
+passages the signed-in person may open. To measure it, run this with the stack up:
+
+```bash
+dotnet run --project tools/Truckroll.Eval -- --write
+```
+
+It asks the 61 questions in [evals/retrieval.json](evals/retrieval.json) in every mode, and
+regenerates [evals/results.md](evals/results.md). Today, hybrid finds the right passage in the
+top 5 for every question, and ranks it first 84% of the time, against 80% for vectors alone.
+
 ## Quality gate
 
 ```powershell

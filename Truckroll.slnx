@@ -8,4 +8,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Truckroll.Api.Tests/Truckroll.Api.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Truckroll.Eval/Truckroll.Eval.csproj" />
+  </Folder>
 </Solution>
