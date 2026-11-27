@@ -88,6 +88,12 @@ Redis in Testcontainers, ESLint, `tsc` and a production `next build`. GitHub Act
 this account, so the gate runs locally before every merge; the workflow in `.github/workflows`
 runs the same script once it's unlocked.
 
+With the stack running, `./scripts/ci.ps1 -EndToEnd` (or `./scripts/ci.sh --e2e`) adds the
+Playwright tests: each role signs in, a dispatcher drags a job between lanes while a second board
+follows live, the assistant answers with citations, and a call becomes a booked job. They use the
+real model, so they check the shape of an answer, not its wording. `npm run capture` in `web/`
+regenerates the screenshots and the demo video.
+
 ## License
 
 Copyright (c) 2026 Amr Abdallah. All rights reserved.

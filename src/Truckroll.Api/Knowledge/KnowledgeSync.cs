@@ -28,16 +28,31 @@ public sealed class KnowledgeQueue : IJobChangeHandler
         return Task.CompletedTask;
     }
 
+    private int _rebuildsPending;
+
+    /// <summary>
+    /// A full rebuild is queued or running. Until it finishes, the index may still be the old one,
+    /// or half built, so anything waiting for "the data's been reset and indexed" must wait on this.
+    /// </summary>
+    public bool RebuildPending => Volatile.Read(ref _rebuildsPending) > 0;
+
     /// <summary>Queues a full rebuild and completes with its report.</summary>
     public Task<IndexReport> RebuildAsync()
     {
         var done = new TaskCompletionSource<IndexReport>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Interlocked.Increment(ref _rebuildsPending);
         _channel.Writer.TryWrite(new IndexRequest.Rebuild(done));
         return done.Task;
     }
 
     /// <summary>Queues a full rebuild without waiting for it (after a demo reset, say).</summary>
-    public void RequestRebuild() => _channel.Writer.TryWrite(new IndexRequest.Rebuild(null));
+    public void RequestRebuild()
+    {
+        Interlocked.Increment(ref _rebuildsPending);
+        _channel.Writer.TryWrite(new IndexRequest.Rebuild(null));
+    }
+
+    internal void RebuildFinished() => Interlocked.Decrement(ref _rebuildsPending);
 
     internal void MarkReady() => _ready.TrySetResult();
 }
@@ -91,6 +106,13 @@ public sealed class KnowledgeSyncService(
             {
                 logger.LogWarning(exception, "Knowledge index update failed: {Request}", request);
                 (request as IndexRequest.Rebuild)?.Done?.TrySetException(exception);
+            }
+            finally
+            {
+                if (request is IndexRequest.Rebuild)
+                {
+                    queue.RebuildFinished();
+                }
             }
         }
     }
