@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { NotBuiltYet } from "@/components/shell/not-built-yet";
+import { McpView } from "./mcp-view";
 
 export const metadata: Metadata = { title: "MCP access" };
 
 export default function Page() {
-  return <NotBuiltYet title="MCP access" description="Connect Claude Desktop to Truckroll with a personal token." issue={16} />;
+  return <McpView />;
 }

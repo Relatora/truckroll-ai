@@ -69,6 +69,14 @@ The same tool runs two more suites, and writes each one's results page:
   model and writes [extraction-results.md](evals/extraction-results.md). 94% of fields come back
   right.
 
+### Claude Desktop (MCP)
+
+Truckroll is an MCP server at `/mcp`. Create a personal token on the **MCP access** page, and
+paste the config it generates into Claude Desktop. Claude can then search customers, read job
+history, check the schedule, ask for dispatch suggestions and search the knowledge base, all as
+you and with your access. [docs/MCP.md](docs/MCP.md) covers setup, the seven tools and the
+security model.
+
 ## Quality gate
 
 ```powershell

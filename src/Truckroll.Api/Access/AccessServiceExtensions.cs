@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Truckroll.Data;
 using Truckroll.Data.Domain;
 
@@ -12,8 +14,12 @@ public static class AccessServiceExtensions
 
     public static IServiceCollection AddTruckrollAccess(this IServiceCollection services)
     {
-        services.AddAuthentication(IdentityConstants.ApplicationScheme)
-            .AddIdentityCookies();
+        // The browser signs in with a cookie; AI clients use a personal token (MCP only).
+        var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
+        authentication.AddIdentityCookies();
+        authentication.AddScheme<AuthenticationSchemeOptions, PersonalTokenHandler>(PersonalTokenHandler.SchemeName, null);
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<PersonalTokens>();
 
         services.AddIdentityCore<AppUser>(options =>
             {
@@ -58,7 +64,12 @@ public static class AccessServiceExtensions
         // (Identity's default is every 30); a cookie for a missing or changed user is dropped.
         services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+            // /mcp takes tokens and only tokens: a browser cookie can't drive it, and a token
+            // can't open the web app (whose endpoints use the default, cookie, scheme).
+            options.AddPolicy(PersonalTokenHandler.SchemeName, policy => policy
+                .AddAuthenticationSchemes(PersonalTokenHandler.SchemeName)
+                .RequireAuthenticatedUser()));
         services.AddHttpContextAccessor();
         services.AddScoped(provider =>
         {

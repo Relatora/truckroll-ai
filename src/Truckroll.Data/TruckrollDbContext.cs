@@ -34,6 +34,7 @@ public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : 
     public DbSet<JobNote> JobNotes => Set<JobNote>();
     public DbSet<CallRecord> CallRecords => Set<CallRecord>();
     public DbSet<KnowledgeDocument> KnowledgeDocuments => Set<KnowledgeDocument>();
+    public DbSet<PersonalAccessToken> PersonalAccessTokens => Set<PersonalAccessToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
