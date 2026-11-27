@@ -30,6 +30,7 @@ public sealed record SearchHit(
     string Title,
     string Text,
     IReadOnlyList<string> Identifiers,
+    int? CustomerId,
     double Score,
     int? VectorRank,
     int? KeywordRank,
@@ -84,7 +85,9 @@ public sealed partial class KnowledgeSearch(
     public const double CommonIdentifierWeight = 1.0;
     public const int RareIdentifierMatches = 10;
 
-    private static readonly string[] ReturnedFields = ["title", "text", "source", "record", "ids"];
+    /// <summary>An exact street address in the question: strong, but a home has many passages.</summary>
+    public const double AddressWeight = 2.0;
+    private static readonly string[] ReturnedFields = ["title", "text", "source", "record", "ids", "customer"];
 
     /// <summary>Question words that carry no meaning for keyword search.</summary>
     private static readonly HashSet<string> QuestionWords = new(StringComparer.Ordinal)
@@ -130,6 +133,14 @@ public sealed partial class KnowledgeSearch(
             rankings.Add(await IdentifierRankingAsync(identifiers, words, filter, found));
         }
 
+        // A street address names one home the way a serial names one unit: "14 Maple St" must not
+        // be out-voted by every other Maple St. An exact phrase match is its own ranking.
+        var addresses = AddressesIn(question);
+        if (mode is SearchMode.Hybrid or SearchMode.Identifier && addresses.Count > 0)
+        {
+            var phrases = string.Join('|', addresses.Select(a => $"\"{a}\""));
+            rankings.Add(await RunAsync("address", AddressWeight, new Query($"{filter} @title|text:({phrases})"), found));
+        }
         var fused = Fuse(rankings);
         var allowed = await AllowedRecordsAsync(scope, fused.Select(f => found[f.Key]["record"].ToString()).Distinct().ToList(), cancellationToken);
 
@@ -145,10 +156,12 @@ public sealed partial class KnowledgeSearch(
                 x.Fields["title"].ToString(),
                 x.Fields["text"].ToString(),
                 x.Fields["ids"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries),
+                // Documents have no customer; the field is absent, not empty.
+                int.TryParse(x.Fields["customer"].ToString(), CultureInfo.InvariantCulture, out var customer) ? customer : null,
                 Math.Round(x.Fused.Score, 5),
                 x.Fused.RankIn("vector"),
                 x.Fused.RankIn("keyword"),
-                x.Fused.RankIn("identifier")))
+                x.Fused.RankIn("identifier") ?? x.Fused.RankIn("address")))
             .ToList();
     }
 
@@ -361,4 +374,13 @@ public sealed partial class KnowledgeSearch(
     // The same shape as PassageBuilder's identifier pattern, but case-insensitive.
     [GeneratedRegex(@"\b[A-Z]{1,4}\d*(?:-[A-Z0-9]+)+\b", RegexOptions.IgnoreCase)]
     private static partial Regex LooseIdentifierPattern();
+
+    /// <summary>Street addresses in the question, lower-cased for a phrase query: "14 maple st".</summary>
+    internal static IReadOnlyList<string> AddressesIn(string question) =>
+        AddressPattern().Matches(question).Select(m => m.Value.ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToList();
+
+    // A house number, one or two words, and a street type, as the seed and most Ontario
+    // addresses are written ("14 Maple St", "231 Lakeview Dr", "88 Birch Cres").
+    [GeneratedRegex(@"\b\d{1,5}\s+[A-Za-z]+(?:\s+[A-Za-z]+)?\s+(?:St|Street|Rd|Road|Dr|Drive|Cres|Crescent|Ave|Avenue|Pl|Place|Way|Crt|Ct|Court|Blvd|Ln|Lane)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex AddressPattern();
 }
