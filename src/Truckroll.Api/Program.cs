@@ -9,6 +9,7 @@ using Truckroll.Api.Features.Branches;
 using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Dispatch;
+using Truckroll.Api.Features.Dispatch.Suggestions;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Features.Knowledge;
 using Truckroll.Api.Features.Status;
@@ -34,6 +35,7 @@ builder.Services.AddSingleton<CompanyClock>();
 builder.Services.AddScoped<IJobEvents, InProcessJobEvents>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IJobChangeHandler, DispatchHubBroadcaster>();
+builder.Services.AddScoped<SuggestionExplainer>();
 builder.Services.AddProblemDetails();
 
 // Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
@@ -68,6 +70,7 @@ crm.MapCustomerEndpoints();
 crm.MapBranchEndpoints();
 crm.MapJobEndpoints();
 crm.MapDispatchEndpoints();
+crm.MapSuggestionEndpoints();
 crm.MapKnowledgeEndpoints();
 crm.MapAssistantEndpoints();
 

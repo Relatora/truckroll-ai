@@ -63,10 +63,18 @@ public static class AuthEndpoints
     }
 
     internal static async Task<Results<Ok<MeResponse>, UnauthorizedHttpResult>> GetMeAsync(
-        AccessScope scope, UserManager<AppUser> users, TruckrollDbContext db)
+        AccessScope scope, UserManager<AppUser> users, SignInManager<AppUser> signIn, TruckrollDbContext db)
     {
         var user = scope.UserId is null ? null : await users.FindByIdAsync(scope.UserId);
-        return user is null ? TypedResults.Unauthorized() : TypedResults.Ok(await DescribeAsync(user, db));
+        if (user is null)
+        {
+            // A cookie for an account that no longer exists (the demo data was reset, say). Drop
+            // it, so the browser stops presenting it and the web app's proxy sends them to sign in.
+            await signIn.SignOutAsync();
+            return TypedResults.Unauthorized();
+        }
+
+        return TypedResults.Ok(await DescribeAsync(user, db));
     }
 
     private static async Task<MeResponse> DescribeAsync(AppUser user, TruckrollDbContext db)

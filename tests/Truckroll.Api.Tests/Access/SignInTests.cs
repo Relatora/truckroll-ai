@@ -88,4 +88,33 @@ public sealed class SignInTests(TruckrollApiFactory factory)
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me", Ct)).StatusCode);
     }
+
+    [Fact]
+    public async Task A_cookie_for_a_deleted_account_is_dropped_not_left_to_loop()
+    {
+        const string email = "deleted-later@kestrel.test";
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+            await users.CreateAsync(new AppUser { UserName = email, Email = email, DisplayName = "Deleted Later", Role = UserRole.Owner }, "correct-horse-battery");
+        }
+
+        using var client = factory.CreateClient();
+        (await client.PostAsJsonAsync("/api/auth/sign-in", new { email, password = "correct-horse-battery" }, Ct)).EnsureSuccessStatusCode();
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+            await users.DeleteAsync((await users.FindByEmailAsync(email))!);
+        }
+
+        var me = await client.GetAsync("/api/auth/me", Ct);
+
+        // 401, and the cookie is expired in the same response, so the browser stops sending it
+        // and the web app's proxy can send the person to sign in.
+        Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
+        var cleared = Assert.Single(me.Headers.GetValues("Set-Cookie"), c => c.StartsWith("truckroll.auth=", StringComparison.Ordinal));
+        Assert.Contains("expires=Thu, 01 Jan 1970", cleared, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/customers", Ct)).StatusCode);
+    }
 }

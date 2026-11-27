@@ -53,6 +53,11 @@ public static class AccessServiceExtensions
             };
         });
 
+        // The cookie carries the role and branch, so it would keep working after the account
+        // behind it changed or was deleted. Re-check it against the user record every minute
+        // (Identity's default is every 30); a cookie for a missing or changed user is dropped.
+        services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
+
         services.AddAuthorization();
         services.AddHttpContextAccessor();
         services.AddScoped(provider =>

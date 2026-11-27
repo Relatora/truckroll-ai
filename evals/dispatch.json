@@ -1,0 +1,235 @@
+{
+  "about": "Dispatch eval. Each scenario is one job and a small team on one day, with the technician an experienced dispatcher would send. Positions are [km east, km north] of the branch, where every day starts at 8:00. Windows are local times. Written before the scorer was run on them. Run: dotnet run --project tools/Truckroll.Eval -- --suite dispatch --write",
+  "scenarios": [
+    {
+      "id": "licence-beats-distance",
+      "why": "Ben is closest but only holds a G3; Sam has a G2 but does plumbing. Nadia is the nearest licensed furnace tech.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "12:00-14:00", "minutes": 90, "at": [1, 0] },
+      "technicians": [
+        { "name": "Ben", "skills": "Furnaces", "licences": "GasG3" },
+        { "name": "Sam", "skills": "Plumbing", "licences": "GasG2, Plumber306A" },
+        { "name": "Nadia", "skills": "Furnaces, Boilers", "licences": "GasG3, GasG2", "day": [{ "window": "08:00-10:00", "minutes": 90, "at": [8, 0] }] },
+        { "name": "Lee", "skills": "Furnaces", "licences": "GasG3, GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [20, 0] }] }
+      ],
+      "expect": "Nadia"
+    },
+    {
+      "id": "skill-match",
+      "why": "All three hold a 313A, but Kim works on heat pumps, not central air.",
+      "job": { "work": "AirConditioning", "licence": "Refrigeration313A", "window": "10:00-12:00", "minutes": 60, "at": [5, 5] },
+      "technicians": [
+        { "name": "Kim", "skills": "HeatPumps", "licences": "Refrigeration313A", "day": [{ "window": "08:00-09:00", "minutes": 45, "at": [4, 4] }] },
+        { "name": "Ari", "skills": "AirConditioning, HeatPumps", "licences": "Refrigeration313A", "day": [{ "window": "08:00-09:00", "minutes": 45, "at": [8, 6] }] },
+        { "name": "Jo", "skills": "AirConditioning", "licences": "Refrigeration313A", "day": [{ "window": "08:00-09:00", "minutes": 45, "at": [18, 5] }] }
+      ],
+      "expect": "Ari"
+    },
+    {
+      "id": "already-nearby",
+      "why": "Mia finishes a job one kilometre away just before this window opens.",
+      "job": { "work": "Boilers", "licence": "GasG2", "window": "10:00-12:00", "minutes": 90, "at": [10, 0] },
+      "technicians": [
+        { "name": "Raj", "skills": "Boilers", "licences": "GasG2" },
+        { "name": "Mia", "skills": "Boilers, Furnaces", "licences": "GasG2", "day": [{ "window": "08:00-09:30", "minutes": 75, "at": [9, 0] }] },
+        { "name": "Eve", "skills": "Boilers", "licences": "GasG2", "day": [{ "window": "08:00-09:00", "minutes": 45, "at": [-6, 0] }] }
+      ],
+      "expect": "Mia"
+    },
+    {
+      "id": "spread-the-load",
+      "why": "Ola is a kilometre closer but already has four jobs; Pat has one and is only a few minutes further.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "14:00-16:00", "minutes": 60, "at": [2, 2] },
+      "technicians": [
+        { "name": "Ola", "skills": "Furnaces", "licences": "GasG2", "day": [
+          { "window": "08:00-09:00", "minutes": 45, "at": [1, 1] }, { "window": "09:30-10:30", "minutes": 45, "at": [3, 1] },
+          { "window": "11:00-12:00", "minutes": 45, "at": [2, 0] }, { "window": "12:30-13:30", "minutes": 45, "at": [2, 1] } ] },
+        { "name": "Pat", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "11:00-13:00", "minutes": 90, "at": [6, 2] }] }
+      ],
+      "expect": "Pat"
+    },
+    {
+      "id": "late-arrival",
+      "why": "Ann is close but stuck on a long job until 11:00 for a 10:00 emergency window; Bo is free now.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "10:00-12:00", "minutes": 90, "at": [3, 0] },
+      "technicians": [
+        { "name": "Ann", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "08:00-10:00", "minutes": 180, "at": [2, 0] }] },
+        { "name": "Bo", "skills": "Furnaces", "licences": "GasG2" }
+      ],
+      "expect": "Bo"
+    },
+    {
+      "id": "protect-the-next-job",
+      "why": "Cy is free now but due 35 km away at 1:00; a two-hour job here would make him late. Di's next job is next door at 3:00.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "11:00-13:00", "minutes": 120, "at": [0, 0] },
+      "technicians": [
+        { "name": "Cy", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "13:00-15:00", "minutes": 90, "at": [35, 0] }] },
+        { "name": "Di", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "15:00-17:00", "minutes": 60, "at": [1, 0] }] }
+      ],
+      "expect": "Di"
+    },
+    {
+      "id": "rural-call",
+      "why": "A water heater out in the county; Ed is already working two kilometres from it.",
+      "job": { "work": "WaterHeaters", "licence": "GasG2", "window": "12:00-14:00", "minutes": 90, "at": [30, 10] },
+      "technicians": [
+        { "name": "Fi", "skills": "WaterHeaters, Furnaces", "licences": "GasG2" },
+        { "name": "Ed", "skills": "WaterHeaters", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [28, 9] }] },
+        { "name": "Gil", "skills": "WaterHeaters", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [-10, 0] }] }
+      ],
+      "expect": "Ed"
+    },
+    {
+      "id": "plumbing",
+      "why": "No licence needed, but Gus is the plumber; Hal only does furnaces and Ian is fully booked.",
+      "job": { "work": "Plumbing", "licence": "None", "window": "13:00-15:00", "minutes": 60, "at": [4, 4] },
+      "technicians": [
+        { "name": "Hal", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "10:00-12:00", "minutes": 60, "at": [4, 3] }] },
+        { "name": "Gus", "skills": "Plumbing, Drains", "licences": "Plumber306A", "day": [{ "window": "10:00-12:00", "minutes": 60, "at": [7, 4] }] },
+        { "name": "Ian", "skills": "Plumbing", "licences": "Plumber306A", "day": [
+          { "window": "08:00-09:00", "minutes": 45, "at": [5, 5] }, { "window": "09:30-10:30", "minutes": 45, "at": [6, 5] },
+          { "window": "11:00-12:00", "minutes": 45, "at": [5, 4] }, { "window": "15:30-16:30", "minutes": 45, "at": [3, 4] } ] }
+      ],
+      "expect": "Gus"
+    },
+    {
+      "id": "indoor-air",
+      "why": "A humidifier: Jen does indoor air quality and has a light day.",
+      "job": { "work": "IndoorAirQuality", "licence": "None", "window": "09:00-11:00", "minutes": 45, "at": [2, -3] },
+      "technicians": [
+        { "name": "Lou", "skills": "Furnaces", "licences": "GasG2" },
+        { "name": "Jen", "skills": "IndoorAirQuality, Furnaces", "licences": "GasG2" },
+        { "name": "Ken", "skills": "IndoorAirQuality", "licences": "None", "day": [
+          { "window": "12:00-13:00", "minutes": 45, "at": [1, 1] }, { "window": "13:00-14:00", "minutes": 45, "at": [2, 1] },
+          { "window": "14:00-15:00", "minutes": 45, "at": [3, 1] }, { "window": "15:00-16:00", "minutes": 45, "at": [4, 1] } ] }
+      ],
+      "expect": "Jen"
+    },
+    {
+      "id": "installation-needs-a-lead",
+      "why": "A furnace replacement needs an installer; Ned is closer but does repairs only.",
+      "job": { "work": "Installations", "licence": "GasG2", "window": "08:00-16:00", "minutes": 360, "at": [8, 8] },
+      "technicians": [
+        { "name": "Ned", "skills": "Furnaces", "licences": "GasG2" },
+        { "name": "Max", "skills": "Installations, Furnaces", "licences": "GasG2" }
+      ],
+      "expect": "Max"
+    },
+    {
+      "id": "heat-pump",
+      "why": "Quinn is closer, but only does central air; Opal does heat pumps.",
+      "job": { "work": "HeatPumps", "licence": "Refrigeration313A", "window": "13:00-15:00", "minutes": 90, "at": [-5, 0] },
+      "technicians": [
+        { "name": "Quinn", "skills": "AirConditioning", "licences": "Refrigeration313A", "day": [{ "window": "10:00-12:00", "minutes": 60, "at": [-4, 0] }] },
+        { "name": "Opal", "skills": "HeatPumps, AirConditioning", "licences": "Refrigeration313A", "day": [
+          { "window": "08:00-10:00", "minutes": 60, "at": [-8, 2] }, { "window": "10:30-12:00", "minutes": 60, "at": [-9, 1] } ] }
+      ],
+      "expect": "Opal"
+    },
+    {
+      "id": "closer-of-two-equals",
+      "why": "Same skills, same load; Rae is finishing a kilometre away, Sid two.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "12:00-14:00", "minutes": 60, "at": [5, 0] },
+      "technicians": [
+        { "name": "Sid", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 60, "at": [6, 1.5] }] },
+        { "name": "Rae", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 60, "at": [4, 0] }] }
+      ],
+      "expect": "Rae"
+    },
+    {
+      "id": "only-one-licensed",
+      "why": "A gas emergency and only Tom holds a G2, even though he's 25 km out.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "14:00-16:00", "minutes": 90, "at": [0, 2] },
+      "technicians": [
+        { "name": "Ty", "skills": "Furnaces", "licences": "GasG3" },
+        { "name": "Uli", "skills": "AirConditioning", "licences": "Refrigeration313A" },
+        { "name": "Tom", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "11:00-13:00", "minutes": 90, "at": [25, 0] }] }
+      ],
+      "expect": "Tom"
+    },
+    {
+      "id": "first-call-of-the-day",
+      "why": "An 8:00 window: everyone starts at the branch, so it's skill and workload. Xia has a full day ahead.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "08:00-10:00", "minutes": 60, "at": [3, 3] },
+      "technicians": [
+        { "name": "Wes", "skills": "Plumbing", "licences": "GasG2, Plumber306A" },
+        { "name": "Xia", "skills": "Furnaces", "licences": "GasG2", "day": [
+          { "window": "10:00-11:00", "minutes": 45, "at": [3, 4] }, { "window": "11:00-12:00", "minutes": 45, "at": [4, 4] },
+          { "window": "13:00-14:00", "minutes": 45, "at": [3, 2] }, { "window": "14:00-15:00", "minutes": 45, "at": [2, 2] } ] },
+        { "name": "Uma", "skills": "Furnaces", "licences": "GasG2" }
+      ],
+      "expect": "Uma"
+    },
+    {
+      "id": "booked-in-the-window",
+      "why": "Yan would be perfect but already has a job in this window.",
+      "job": { "work": "Boilers", "licence": "GasG2", "window": "12:00-14:00", "minutes": 90, "at": [2, 0] },
+      "technicians": [
+        { "name": "Yan", "skills": "Boilers", "licences": "GasG2", "day": [{ "window": "12:00-14:00", "minutes": 90, "at": [2, 1] }] },
+        { "name": "Zed", "skills": "Boilers", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [7, 0] }] }
+      ],
+      "expect": "Zed"
+    },
+    {
+      "id": "afternoon-after-a-far-job",
+      "why": "Both finish a job at 2:00; Abe's is three kilometres away, Bea's twenty-five.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "15:00-17:00", "minutes": 60, "at": [2, 0] },
+      "technicians": [
+        { "name": "Bea", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "12:00-14:00", "minutes": 90, "at": [25, 0] }] },
+        { "name": "Abe", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "12:00-14:00", "minutes": 90, "at": [3, 2] }] }
+      ],
+      "expect": "Abe"
+    },
+    {
+      "id": "tankless-in-town",
+      "why": "A tankless descale: Cal does water heaters and is between two jobs nearby; Dee is a furnace tech with a free afternoon.",
+      "job": { "work": "WaterHeaters", "licence": "GasG2", "window": "13:00-15:00", "minutes": 60, "at": [-2, 3] },
+      "technicians": [
+        { "name": "Dee", "skills": "Furnaces", "licences": "GasG2" },
+        { "name": "Cal", "skills": "WaterHeaters, Plumbing", "licences": "GasG2, Plumber306A", "day": [
+          { "window": "10:00-12:00", "minutes": 60, "at": [-3, 3] }, { "window": "15:30-17:00", "minutes": 60, "at": [-1, 4] } ] },
+        { "name": "Eli", "skills": "WaterHeaters", "licences": "GasG2", "day": [{ "window": "10:00-12:00", "minutes": 60, "at": [22, -4] }] }
+      ],
+      "expect": "Cal"
+    },
+    {
+      "id": "big-team",
+      "why": "Eight technicians; Gia is licensed, does furnaces, finishes nearby at 11:00 and has a light day.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "12:00-14:00", "minutes": 90, "at": [6, -2] },
+      "technicians": [
+        { "name": "Ace", "skills": "AirConditioning", "licences": "Refrigeration313A" },
+        { "name": "Bob", "skills": "Furnaces", "licences": "GasG3" },
+        { "name": "Gia", "skills": "Furnaces, Boilers", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [5, -2] }] },
+        { "name": "Hub", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "09:00-11:00", "minutes": 90, "at": [-15, 6] }] },
+        { "name": "Ivy", "skills": "Plumbing", "licences": "Plumber306A" },
+        { "name": "Jax", "skills": "Furnaces", "licences": "GasG2", "day": [
+          { "window": "08:00-09:00", "minutes": 45, "at": [6, -1] }, { "window": "09:30-10:30", "minutes": 45, "at": [7, -1] },
+          { "window": "10:30-11:30", "minutes": 45, "at": [6, -3] }, { "window": "14:30-15:30", "minutes": 45, "at": [5, -3] } ] },
+        { "name": "Kai", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "12:00-14:00", "minutes": 90, "at": [1, 1] }] },
+        { "name": "Liv", "skills": "Boilers", "licences": "GasG2" }
+      ],
+      "expect": "Gia"
+    },
+    {
+      "id": "unskilled-but-only-free",
+      "why": "Both furnace techs are booked in the window; Mo is licensed and free, so he's the only one who can go.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "10:00-12:00", "minutes": 60, "at": [3, 0] },
+      "technicians": [
+        { "name": "Nia", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "10:00-12:00", "minutes": 60, "at": [2, 0] }] },
+        { "name": "Oz", "skills": "Furnaces", "licences": "GasG2", "day": [{ "window": "11:00-13:00", "minutes": 60, "at": [4, 0] }] },
+        { "name": "Mo", "skills": "Boilers", "licences": "GasG2" }
+      ],
+      "expect": "Mo"
+    },
+    {
+      "id": "end-of-day",
+      "why": "A 3:00 to 5:00 call: Pia is done at 2:30 across the road; Rob is free all afternoon at the branch, 9 km away.",
+      "job": { "work": "Furnaces", "licence": "GasG2", "window": "15:00-17:00", "minutes": 60, "at": [9, 0] },
+      "technicians": [
+        { "name": "Rob", "skills": "Furnaces", "licences": "GasG2" },
+        { "name": "Pia", "skills": "Furnaces", "licences": "GasG2", "day": [
+          { "window": "10:00-12:00", "minutes": 60, "at": [5, 0] }, { "window": "13:00-14:00", "minutes": 90, "at": [9, 0.3] } ] }
+      ],
+      "expect": "Pia"
+    }
+  ]
+}
