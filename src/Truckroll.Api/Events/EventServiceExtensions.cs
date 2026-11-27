@@ -25,6 +25,7 @@ public static class EventServiceExtensions
         services.TryAddSingleton<OutboxSignal>();
         services.TryAddSingleton<OutboxCommitInterceptor>();
         services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<EventMetrics>();
         services.AddSingleton<OutboxRelay>();
         services.AddHostedService(provider => provider.GetRequiredService<OutboxRelay>());
 

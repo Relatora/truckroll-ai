@@ -51,8 +51,11 @@ public sealed class ModelPipelineTests(TruckrollApiFactory factory)
         await Chat.GetResponseAsync($"Customer 905-555-0142 asks about {marker}", cancellationToken: TestContext.Current.CancellationToken);
 
         var span = Assert.Single(spans, s => s.TraceId == parent.TraceId && s.DisplayName == $"chat {FakeChatClient.ModelId}");
-        Assert.NotNull(span.GetTagItem("gen_ai.usage.output_tokens"));
+        // What the Datadog dashboard groups by: provider, model, and tokens each way.
+        Assert.Equal("fake", span.GetTagItem("gen_ai.provider.name"));
         Assert.Equal(FakeChatClient.ModelId, span.GetTagItem("gen_ai.request.model"));
+        Assert.NotNull(span.GetTagItem("gen_ai.usage.input_tokens"));
+        Assert.NotNull(span.GetTagItem("gen_ai.usage.output_tokens"));
 
         // Sensitive data is off: no tag or event on any span carries the prompt.
         Assert.DoesNotContain(spans, s =>

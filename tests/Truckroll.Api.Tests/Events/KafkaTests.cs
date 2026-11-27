@@ -133,6 +133,8 @@ public sealed class KafkaTests(TruckrollApiFactory factory, KafkaBroker broker) 
     {
         var services = new ServiceCollection()
             .AddDbContext<TruckrollDbContext>(o => o.UseMySql(factory.ConnectionStringFor(database), TruckrollDbContext.ServerVersion))
+            .AddMetrics()
+            .AddSingleton<EventMetrics>()
             .BuildServiceProvider();
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<TruckrollDbContext>();
@@ -177,7 +179,7 @@ public sealed class KafkaTests(TruckrollApiFactory factory, KafkaBroker broker) 
         }
 
         public OutboxRelay Relay(IEventTransport transport) =>
-            new(services.GetRequiredService<IServiceScopeFactory>(), transport, new OutboxSignal(), TimeProvider.System, NullLogger<OutboxRelay>.Instance);
+            new(services.GetRequiredService<IServiceScopeFactory>(), transport, new OutboxSignal(), services.GetRequiredService<EventMetrics>(), TimeProvider.System, NullLogger<OutboxRelay>.Instance);
 
         public ValueTask DisposeAsync() => services.DisposeAsync();
     }

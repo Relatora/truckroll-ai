@@ -86,6 +86,39 @@ var api = builder.AddDotnetProject("api", "../Truckroll.Api/Truckroll.Api.csproj
             IconName = "DatabaseSearch",
         });
 
+// Datadog, opt-in. With no API key set, nothing runs and nothing leaves the machine: the Aspire
+// dashboard is the whole story. Set one and the Datadog Agent joins the stack, and the API sends
+// a second copy of its logs, traces and metrics to the Agent's OTLP receiver (docs/OBSERVABILITY.md):
+//   dotnet user-secrets --project src/Truckroll.AppHost set "Parameters:datadog-api-key" <key>
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:datadog-api-key"]))
+{
+    var apiKey = builder.AddParameter("datadog-api-key", secret: true);
+    // datadoghq.com is US1. An EU account sets Parameters:datadog-site to datadoghq.eu.
+    var site = builder.AddParameter("datadog-site", builder.Configuration["Parameters:datadog-site"] ?? "datadoghq.com");
+
+    var agent = builder.AddContainer("datadog-agent", "gcr.io/datadoghq/agent", "7.85.2")
+        .WithEnvironment("DD_API_KEY", apiKey)
+        .WithEnvironment("DD_SITE", site)
+        .WithEnvironment("DD_HOSTNAME", "truckroll-local")
+        .WithEnvironment("DD_ENV", "local")
+        // OTLP in over gRPC. Traces and metrics are on once a receiver is; logs need both flags
+        // (Datadog keeps them off by default so nobody is billed for logs by surprise).
+        .WithEnvironment("DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT", "0.0.0.0:4317")
+        .WithEnvironment("DD_LOGS_ENABLED", "true")
+        .WithEnvironment("DD_OTLP_CONFIG_LOGS_ENABLED", "true")
+        // Only what the OTLP data needs. The Agent's own host, process and container checks would
+        // report on Docker Desktop's VM, which tells nobody anything about Truckroll.
+        .WithEnvironment("DD_PROCESS_AGENT_ENABLED", "false")
+        .WithEnvironment("DD_ENABLE_PAYLOADS_EVENTS", "false")
+        .WithEnvironment("DD_INVENTORIES_ENABLED", "false")
+        // Agent 7.61+ in Docker can fail to start the OTLP pipeline looking for host processes.
+        .WithEnvironment("HOST_PROC", "/proc")
+        .WithEndpoint(targetPort: 4317, name: "otlp", scheme: "http");
+
+    api.WithEnvironment("Telemetry__Datadog__OtlpEndpoint", agent.GetEndpoint("otlp"))
+        .WaitFor(agent);
+}
+
 // Next.js rewrites /api and /hubs to API_URL, so the browser only ever sees one origin and
 // the sign-in cookie needs no CORS rules (ADR-006).
 // A fixed port (3000) so bookmarks, Playwright and the demo script don't chase a new port
