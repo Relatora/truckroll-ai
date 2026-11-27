@@ -1,0 +1,299 @@
+{
+  "title": "Truckroll · API, models and job events",
+  "description": "Built from the OpenTelemetry the Truckroll API exports through the Datadog Agent (docs/OBSERVABILITY.md). Every metric queried here is checked against the code by DashboardContractTests.",
+  "layout_type": "ordered",
+  "reflow_type": "auto",
+  "template_variables": [
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [],
+      "default": "api"
+    },
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "group",
+        "title": "API",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Requests per second, by route",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "count:http.server.request.duration{service:$service.value,env:$env.value} by {http.route}.as_rate()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "p95 latency, by route",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "p95:http.server.request.duration{service:$service.value,env:$env.value} by {http.route}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Server errors (5xx) as a share of requests",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "errors",
+                      "query": "count:http.server.request.duration{service:$service.value,env:$env.value,http.response.status_code:5*}.as_count()"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "all",
+                      "query": "count:http.server.request.duration{service:$service.value,env:$env.value}.as_count()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "100 * errors / all",
+                      "alias": "% 5xx"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Models",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "p95 model call time, by model",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "p95:gen_ai.client.operation.duration{service:$service.value,env:$env.value} by {gen_ai.request.model,gen_ai.provider.name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Tokens, in and out",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "sum:gen_ai.client.token.usage{service:$service.value,env:$env.value} by {gen_ai.token.type,gen_ai.request.model}.as_count()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Model calls that failed",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "count:gen_ai.client.operation.duration{service:$service.value,env:$env.value,error.type:*} by {error.type}.as_count()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "title": "Job events",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Events published, by type",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "sum:truckroll.events.published{service:$service.value,env:$env.value} by {event.type}.as_count()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Outbox delay, commit to hand-off (p50 and p95)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "p50",
+                      "query": "p50:truckroll.outbox.delay{service:$service.value,env:$env.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "p95",
+                      "query": "p95:truckroll.outbox.delay{service:$service.value,env:$env.value}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "p50",
+                      "alias": "p50"
+                    },
+                    {
+                      "formula": "p95",
+                      "alias": "p95"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Send failures (the relay retries the same event)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "sum:truckroll.outbox.send_failures{service:$service.value,env:$env.value} by {event.type}.as_count()"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -36,6 +36,7 @@ public sealed class OutboxRelay(
     IServiceScopeFactory scopes,
     IEventTransport transport,
     OutboxSignal signal,
+    EventMetrics metrics,
     TimeProvider time,
     ILogger<OutboxRelay> logger) : BackgroundService
 {
@@ -96,6 +97,7 @@ public sealed class OutboxRelay(
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
+                metrics.SendFailed(message.Type);
                 message.Attempts++;
                 message.LastError = exception.Message.Length > 500 ? exception.Message[..500] : exception.Message;
                 await db.SaveChangesAsync(CancellationToken.None);
@@ -105,6 +107,7 @@ public sealed class OutboxRelay(
             // One save per event: a crash now re-sends at most this one, never the whole batch.
             message.PublishedAt = time.GetUtcNow();
             await db.SaveChangesAsync(CancellationToken.None);
+            metrics.Published(message.Type, message.PublishedAt.Value - message.OccurredAt);
             sent++;
         }
 

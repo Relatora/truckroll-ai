@@ -99,6 +99,8 @@ public sealed class OutboxTests(TruckrollApiFactory factory)
     {
         await using var services = new ServiceCollection()
             .AddDbContext<TruckrollDbContext>(options => options.UseMySql(factory.ConnectionStringFor("relay_tests"), TruckrollDbContext.ServerVersion))
+            .AddMetrics()
+            .AddSingleton<EventMetrics>()
             .BuildServiceProvider();
         await using (var scope = services.CreateAsyncScope())
         {
@@ -111,7 +113,7 @@ public sealed class OutboxTests(TruckrollApiFactory factory)
 
         // The broker is down for the second event, once.
         var transport = new FlakyTransport(failOnSend: 2);
-        var relay = new OutboxRelay(services.GetRequiredService<IServiceScopeFactory>(), transport, new OutboxSignal(), TimeProvider.System, NullLogger<OutboxRelay>.Instance);
+        var relay = new OutboxRelay(services.GetRequiredService<IServiceScopeFactory>(), transport, new OutboxSignal(), services.GetRequiredService<EventMetrics>(), TimeProvider.System, NullLogger<OutboxRelay>.Instance);
 
         await Assert.ThrowsAsync<IOException>(() => relay.RelayBatchAsync(Ct));
 

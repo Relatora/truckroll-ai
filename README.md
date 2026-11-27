@@ -164,7 +164,7 @@ places that company wants AI. Here's where each part lives, and what's still pla
 | AI across the business                 | The cited assistant, and an MCP server so Claude Desktop can work in the CRM as its user ([docs/MCP.md](docs/MCP.md))           |
 | Docker                                 | Aspire runs MySQL, Redis and Kafka in containers; tests use Testcontainers, Kafka included ([ADR-008](docs/adr/008-aspire-for-local-orchestration.md))  |
 | Kafka                                  | Every job change and its event commit together through a transactional outbox, and a relay sends them to Kafka. The board, the search index and a notifications drafter each read as a consumer group of their own ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md), [ADR-009](docs/adr/009-one-topic-at-least-once.md)) |
-| Observability, Datadog                 | OpenTelemetry traces and metrics in the Aspire dashboard today, with model calls as spans. Export to Datadog is **v0.2**         |
+| Observability, Datadog                 | OpenTelemetry traces, metrics and logs: model calls carry the provider, model and token counts, and job events are counted by type. The Aspire dashboard shows them locally. Set a Datadog API key and the Datadog Agent gets a copy over OTLP, for a dashboard committed as JSON ([ADR-010](docs/adr/010-opentelemetry-to-datadog-agent.md), [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)) |
 | React Native                           | The technician app, offline first, is **v0.3** ([ROADMAP.md](ROADMAP.md))                                                        |
 | Kubernetes, GitHub Actions             | A workflow is committed and runs the same gate script. Kubernetes with Argo CD is **v0.4**                                       |
 
@@ -267,7 +267,7 @@ rewrites its page in `evals/`.
 ./scripts/ci.ps1     # or ./scripts/ci.sh
 ```
 
-`dotnet format`, a Release build with warnings as errors, 239 xUnit tests against real MySQL and
+`dotnet format`, a Release build with warnings as errors, 243 xUnit tests against real MySQL and
 Redis in Testcontainers, ESLint, `tsc` and a production `next build`. Tests never call a real
 model: a scripted fake chat client and a hashing embedder stand in. GitHub Actions is locked on
 this account, so the gate runs locally before every merge; the workflow in `.github/workflows`
@@ -286,6 +286,7 @@ regenerates the screenshots and the demo video.
 | [DESIGN.md](docs/DESIGN.md)           | The plan: scope, domain model, AI design, and what changed building it |
 | [docs/adr/](docs/adr/)                | Architecture decisions, one per file, with the trade-offs           |
 | [MCP.md](docs/MCP.md)                 | Connecting Claude Desktop, the tools, and the security model        |
+| [OBSERVABILITY.md](docs/OBSERVABILITY.md) | What's measured, turning Datadog on, and importing the dashboard |
 | [AI_WORKFLOW.md](AI_WORKFLOW.md)      | How a team should use AI, both coding with it and shipping it       |
 | [ONBOARDING.md](docs/ONBOARDING.md)   | First day: setup, troubleshooting, a reading order and a first ticket |
 | [CONTRIBUTING.md](CONTRIBUTING.md)    | Branches, commits, PRs and the quality gate                         |
