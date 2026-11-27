@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Truckroll.Api.Access;
 using Truckroll.Api.Common;
+using Truckroll.Api.Data;
 using Truckroll.Data;
 using Truckroll.Data.Domain;
 
@@ -211,6 +212,9 @@ public static class JobEndpoints
             Summary = request.Summary!.Trim(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
+        // The job and its "booked" event commit together. Approving a call books inside its own,
+        // bigger transaction; then this joins that one, and the call decides when to commit.
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         db.Add(job);
 
         // Bookings at the same instant can pick the same number; the unique index catches it and
@@ -230,6 +234,7 @@ public static class JobEndpoints
         }
 
         await events.PublishAsync(Changed(job, "booked", scope), cancellationToken);
+        await work.CommitAsync(cancellationToken);
         var saved = await LoadAsync(job.Id, scope, db, cancellationToken);
         return TypedResults.Created($"/api/jobs/{job.Id}", Describe(saved!, scope));
     }
@@ -275,8 +280,10 @@ public static class JobEndpoints
         }
 
         job.Status = request.Status;
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await events.PublishAsync(Changed(job, request.Status.ToString().ToLowerInvariant(), scope), cancellationToken);
+        await work.CommitAsync(cancellationToken);
         return TypedResults.Ok(Describe(job, scope));
     }
 
@@ -304,9 +311,11 @@ public static class JobEndpoints
             Body = request.Body.Trim(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         db.Add(note);
         await db.SaveChangesAsync(cancellationToken);
         await events.PublishAsync(Changed(job, "noted", scope), cancellationToken);
+        await work.CommitAsync(cancellationToken);
 
         return TypedResults.Created($"/api/jobs/{job.Id}", new JobNoteItem(note.Id, note.Author, note.Source, note.Body, note.CreatedAt));
     }

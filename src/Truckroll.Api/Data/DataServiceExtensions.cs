@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MySqlConnector;
+using Truckroll.Api.Events;
 using Truckroll.Data;
 using Truckroll.Data.Seed;
 
@@ -29,8 +31,13 @@ public static class DataServiceExtensions
             }
         });
 
-        builder.Services.AddDbContext<TruckrollDbContext>((services, options) =>
-            options.UseMySql(services.GetRequiredService<MySqlDataSource>(), TruckrollDbContext.ServerVersion));
+        builder.Services.TryAddSingleton<OutboxSignal>();
+        builder.Services.TryAddSingleton<OutboxCommitInterceptor>();
+
+        // The commit interceptor wakes the outbox relay the moment a change and its event commit.
+        builder.Services.AddDbContext<TruckrollDbContext>((services, options) => options
+            .UseMySql(services.GetRequiredService<MySqlDataSource>(), TruckrollDbContext.ServerVersion)
+            .AddInterceptors(services.GetRequiredService<OutboxCommitInterceptor>()));
 
         return builder;
     }
