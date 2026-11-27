@@ -3,6 +3,7 @@ using Truckroll.Api.Access;
 using Truckroll.Api.Ai;
 using Truckroll.Api.Common;
 using Truckroll.Api.Data;
+using Truckroll.Api.Events;
 using Truckroll.Api.Features.Assistant;
 using Truckroll.Api.Features.Auth;
 using Truckroll.Api.Features.Calls;
@@ -36,7 +37,10 @@ builder.Services.AddTruckrollKnowledge();
 
 builder.Services.AddTruckrollAccess();
 builder.Services.AddSingleton<CompanyClock>();
-builder.Services.AddScoped<IJobEvents, InProcessJobEvents>();
+
+// Job events: written to an outbox in the same transaction as the change, then relayed to the
+// dispatch board and the knowledge index once committed (docs/adr/005).
+builder.Services.AddTruckrollEvents();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IJobChangeHandler, DispatchHubBroadcaster>();
 builder.Services.AddScoped<SuggestionExplainer>();

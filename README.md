@@ -294,9 +294,10 @@ regenerates the screenshots and the demo video.
   does the words. On a recent GPU an answer takes seconds; on a CPU, expect much longer.
 - **No rate limits yet.** The assistant and MCP aren't throttled, because v0.1 runs on one
   person's machine. They come with hosting in v0.4.
-- **In-process events.** A job change reaches the board and the index in the same process. If
-  the API dies between the save and the handler, the board is stale until a refresh. The outbox
-  in v0.2 fixes that ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md)).
+- **Events stay in one process, for now.** Every job change and its event commit together
+  through a transactional outbox, so none is lost or invented. The relay still delivers them
+  to handlers inside the API; Kafka, for other services to hear them, is the rest of v0.2
+  ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md)).
 - **Straight-line distance.** Dispatch scores distance as the crow flies, not by road.
 - **Demo data only.** Kestrel Home Comfort, its people, customers and equipment brands are
   made up. Nothing is ever sent to a customer.

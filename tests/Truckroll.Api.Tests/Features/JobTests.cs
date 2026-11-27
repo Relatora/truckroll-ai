@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Tests.Infrastructure;
 using Truckroll.Data;
@@ -157,32 +156,5 @@ public sealed class JobTests(TruckrollApiFactory factory)
         var note = (await response.Content.ReadFromJsonAsync<JobNoteItem>(JsonOptions.Api, Ct))!;
         Assert.Equal("Nadia Kowalczyk", note.Author);
         Assert.Equal(NoteSource.Technician, note.Source);
-    }
-
-    [Fact]
-    public async Task A_failing_subscriber_never_stops_the_others_or_the_save()
-    {
-        var recorder = new RecordingHandler();
-        var events = new InProcessJobEvents([new ThrowingHandler(), recorder], NullLogger<InProcessJobEvents>.Instance);
-
-        await events.PublishAsync(new JobChanged(1, "J-1", 1, JobStatus.Scheduled, null, "booked", "Test", DateTimeOffset.UtcNow), Ct);
-
-        Assert.Single(recorder.Seen);
-    }
-
-    private sealed class ThrowingHandler : IJobChangeHandler
-    {
-        public Task HandleAsync(JobChanged change, CancellationToken cancellationToken) => throw new InvalidOperationException("Hub down");
-    }
-
-    private sealed class RecordingHandler : IJobChangeHandler
-    {
-        public List<JobChanged> Seen { get; } = [];
-
-        public Task HandleAsync(JobChanged change, CancellationToken cancellationToken)
-        {
-            Seen.Add(change);
-            return Task.CompletedTask;
-        }
     }
 }

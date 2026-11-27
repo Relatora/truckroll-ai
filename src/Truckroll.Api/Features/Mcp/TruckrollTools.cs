@@ -5,6 +5,7 @@ using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using Truckroll.Api.Access;
 using Truckroll.Api.Common;
+using Truckroll.Api.Data;
 using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Dispatch.Suggestions;
@@ -152,9 +153,11 @@ public sealed class TruckrollTools(AccessScope scope, TruckrollDbContext db, Com
             Body = text.Trim(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         db.Add(note);
         await db.SaveChangesAsync(cancellationToken);
         await events.PublishAsync(new JobChanged(job.Id, job.Number, job.BranchId, job.Status, job.TechnicianId, "noted (MCP draft)", scope.DisplayName, DateTimeOffset.UtcNow), cancellationToken);
+        await work.CommitAsync(cancellationToken);
 
         return new DraftNote(note.Id, job.Number, note.Author, note.CreatedAt);
     }

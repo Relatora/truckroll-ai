@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Truckroll.Api.Access;
 using Truckroll.Api.Common;
+using Truckroll.Api.Data;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Data;
 using Truckroll.Data.Domain;
@@ -129,9 +130,10 @@ public static class DispatchEndpoints
         job.TechnicianId = technician.Id;
         job.Status = JobStatus.Dispatched;
         job.DispatchedAt = DateTimeOffset.UtcNow;
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-
         await events.PublishAsync(new JobChanged(job.Id, job.Number, job.BranchId, job.Status, job.TechnicianId, $"assigned to {technician.FullName}", scope.DisplayName, DateTimeOffset.UtcNow), cancellationToken);
+        await work.CommitAsync(cancellationToken);
         return TypedResults.Ok(ToBoardJob(job));
     }
 
@@ -161,9 +163,10 @@ public static class DispatchEndpoints
         job.TechnicianId = null;
         job.Status = JobStatus.Scheduled;
         job.DispatchedAt = null;
+        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-
         await events.PublishAsync(new JobChanged(job.Id, job.Number, job.BranchId, job.Status, null, "unassigned", scope.DisplayName, DateTimeOffset.UtcNow), cancellationToken);
+        await work.CommitAsync(cancellationToken);
         return TypedResults.Ok(ToBoardJob(job));
     }
 
