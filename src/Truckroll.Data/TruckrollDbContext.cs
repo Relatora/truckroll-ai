@@ -36,6 +36,7 @@ public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : 
     public DbSet<KnowledgeDocument> KnowledgeDocuments => Set<KnowledgeDocument>();
     public DbSet<PersonalAccessToken> PersonalAccessTokens => Set<PersonalAccessToken>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

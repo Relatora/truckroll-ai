@@ -39,7 +39,12 @@ public static class Transactions
 /// </summary>
 public sealed class UnitOfWork(IDbContextTransaction? owned) : IAsyncDisposable
 {
+    /// <summary>True when this code started the transaction, and so may commit, roll back or retry it.</summary>
+    public bool Owned => owned is not null;
+
     public Task CommitAsync(CancellationToken cancellationToken) => owned?.CommitAsync(cancellationToken) ?? Task.CompletedTask;
+
+    public Task RollbackAsync(CancellationToken cancellationToken) => owned?.RollbackAsync(cancellationToken) ?? Task.CompletedTask;
 
     public ValueTask DisposeAsync() => owned?.DisposeAsync() ?? ValueTask.CompletedTask;
 }

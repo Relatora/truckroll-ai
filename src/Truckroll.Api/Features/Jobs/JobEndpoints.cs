@@ -212,29 +212,40 @@ public static class JobEndpoints
             Summary = request.Summary!.Trim(),
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        // The job and its "booked" event commit together. Approving a call books inside its own,
-        // bigger transaction; then this joins that one, and the call decides when to commit.
-        await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
         db.Add(job);
 
+        // The job and its "booked" event commit together. Approving a call books inside its own,
+        // bigger transaction; then this joins that one, and the call decides when to commit.
+        //
         // Bookings at the same instant can pick the same number; the unique index catches it and
-        // we try the next one. A little random jitter stops clashing requests retrying in lockstep.
+        // we try the next one, with a little random jitter so clashing requests don't retry in
+        // lockstep. When this booking owns its transaction, each try gets a fresh one: in MySQL a
+        // duplicate-key error inside a transaction leaves a shared lock on the key, concurrent
+        // retries then deadlock, and InnoDB kills the loser's whole transaction (found by the
+        // five-bookings-at-once test).
         for (var attempt = 1; ; attempt++)
         {
+            await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
             job.Number = await JobNumbers.NextAsync(db, cancellationToken);
             try
             {
                 await db.SaveChangesAsync(cancellationToken);
+                await events.PublishAsync(Changed(job, "booked", scope), cancellationToken);
+                await work.CommitAsync(cancellationToken);
                 break;
             }
             catch (DbUpdateException) when (attempt < 6)
             {
+                if (work.Owned)
+                {
+                    await work.RollbackAsync(cancellationToken);
+                    ForgetUnsaved(db, job);
+                }
+
                 await Task.Delay(Random.Shared.Next(5, 25 * attempt), cancellationToken);
             }
         }
 
-        await events.PublishAsync(Changed(job, "booked", scope), cancellationToken);
-        await work.CommitAsync(cancellationToken);
         var saved = await LoadAsync(job.Id, scope, db, cancellationToken);
         return TypedResults.Created($"/api/jobs/{job.Id}", Describe(saved!, scope));
     }
@@ -321,6 +332,24 @@ public static class JobEndpoints
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /// <summary>
+    /// After a rollback, puts the context back to "nothing saved yet": the job to insert again, and
+    /// no half-written outbox row left to slip into the next try as a duplicate event.
+    /// </summary>
+    private static void ForgetUnsaved(TruckrollDbContext db, Job job)
+    {
+        foreach (var entry in db.ChangeTracker.Entries<OutboxMessage>().ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+
+        if (db.Entry(job).State != EntityState.Added)
+        {
+            job.Id = 0;
+            db.Entry(job).State = EntityState.Added;
+        }
+    }
 
     private static JobChanged Changed(Job job, string change, AccessScope scope) =>
         new(job.Id, job.Number, job.BranchId, job.Status, job.TechnicianId, change, scope.DisplayName, DateTimeOffset.UtcNow);

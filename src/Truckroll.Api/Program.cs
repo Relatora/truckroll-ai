@@ -15,6 +15,7 @@ using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Dispatch.Suggestions;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Features.Mcp;
+using Truckroll.Api.Features.Notifications;
 using Truckroll.Api.Features.Tokens;
 using Truckroll.Api.Features.Knowledge;
 using Truckroll.Api.Features.Status;
@@ -38,9 +39,9 @@ builder.Services.AddTruckrollKnowledge();
 builder.Services.AddTruckrollAccess();
 builder.Services.AddSingleton<CompanyClock>();
 
-// Job events: written to an outbox in the same transaction as the change, then relayed to the
-// dispatch board and the knowledge index once committed (docs/adr/005).
-builder.Services.AddTruckrollEvents();
+// Job events: written to an outbox in the same transaction as the change, then relayed through
+// Kafka to the dispatch board, the knowledge index and customer notifications (docs/adr/005, 009).
+builder.AddTruckrollEvents();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IJobChangeHandler, DispatchHubBroadcaster>();
 builder.Services.AddScoped<SuggestionExplainer>();
@@ -97,6 +98,7 @@ crm.MapAssistantEndpoints();
 crm.MapCallEndpoints();
 crm.MapTokenEndpoints();
 crm.MapDashboardEndpoints();
+crm.MapNotificationEndpoints();
 
 // Live updates for the dispatch board, behind the same cookie (DispatchHub is [Authorize]).
 app.MapHub<DispatchHub>(DispatchHub.Path);

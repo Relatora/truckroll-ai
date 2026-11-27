@@ -76,6 +76,21 @@ export function useJob(id: number) {
   return useQuery({ queryKey: ["jobs", "detail", id], queryFn: () => api<JobDetail>(`/jobs/${id}`), retry: false });
 }
 
+/** A message drafted for the customer because of something that happened to the job. Never sent. */
+export type CustomerUpdate = { id: number; kind: string; subject: string; body: string; createdAt: string };
+
+/**
+ * The drafts for a job's customer. They're written by a subscriber to the job event stream, a
+ * moment after the change that caused them, so the list checks back while the page is open.
+ */
+export function useCustomerUpdates(jobId: number) {
+  return useQuery({
+    queryKey: ["jobs", "customer-updates", jobId],
+    queryFn: () => api<CustomerUpdate[]>(`/jobs/${jobId}/customer-updates`),
+    refetchInterval: 10_000,
+  });
+}
+
 /** After any change to a job, the lists and the customer's history are stale too. */
 function useInvalidateJobs() {
   const client = useQueryClient();

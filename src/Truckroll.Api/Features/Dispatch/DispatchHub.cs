@@ -41,6 +41,12 @@ public sealed class DispatchHub(TruckrollDbContext db) : Hub
 /// <summary>Forwards every job change to the branch's group on the hub.</summary>
 public sealed class DispatchHubBroadcaster(IHubContext<DispatchHub> hub) : IJobChangeHandler
 {
+    public string Subscription => "board";
+
+    // A board only needs what happens while it's open, and each API instance pushes to its own
+    // connected browsers, so every instance hears every event from "now".
+    public bool LiveOnly => true;
+
     public Task HandleAsync(JobChanged change, CancellationToken cancellationToken) =>
         hub.Clients.Group(DispatchHub.GroupFor(change.BranchId)).SendAsync("jobChanged", change, cancellationToken);
 }

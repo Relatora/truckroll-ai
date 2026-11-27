@@ -23,7 +23,7 @@ cd web && npm install && cd ..
 dotnet run --project src/Truckroll.AppHost --launch-profile http
 ```
 
-Aspire starts MySQL, Redis, the API and the web app, and prints a link to its dashboard. Open
+Aspire starts MySQL, Redis, Kafka, the API and the web app, and prints a link to its dashboard. Open
 the dashboard first. Every resource, its logs and its traces are there, and it's where you'll
 look when something misbehaves.
 
@@ -52,6 +52,7 @@ These are the ones I actually hit.
 | The board shows yesterday, or jobs look stale          | The demo is seeded for the day it was created, and the database volume survives restarts. Press **Reset demo data** on the `api` resource in the dashboard. |
 | The assistant cites nothing                            | The index is empty or still building. `GET /api/dev/index` says whether it's ready; **Rebuild knowledge index** on the `api` resource rebuilds it.           |
 | Search fails with an unknown command `FT.CREATE`       | Redis started without its search module. The AppHost loads it with `WithModule(RedisModules.Search)`; don't remove that.                                      |
+| The API waits forever on `kafka`, or Kafka exits       | The native Kafka image needs its KRaft settings, which the AppHost sets. Check the `kafka` resource's log in the dashboard; a config error shows in its first lines. |
 | `ai-check` returns 503                                 | Ollama isn't running, or a model isn't pulled. `ollama list` shows what's there.                                                                             |
 | Tests fail with Docker containers exiting (code 255)   | The machine ran out of memory. Stop loaded models (`ollama stop qwen2.5:7b`) and close the stack before running the gate.                                    |
 | `scripts/ci.ps1` refuses the web build                 | A `next dev` for this app is running. The gate won't build next to it; stop the stack first.                                                                 |

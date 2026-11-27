@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Clock3, KeyRound, MapPin, Phone, Send, ShieldAlert, UserRound } from "lucide-react";
+import { ArrowLeft, Clock3, KeyRound, MailOpen, MapPin, Phone, Send, ShieldAlert, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -13,7 +13,7 @@ import { SpotlightCard } from "@/components/motion/spotlight-card";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { equipmentLabels, type JobStatus } from "@/lib/customers";
-import { statusActions, useAddNote, useChangeStatus, useJob, windowLabel, type JobDetail } from "@/lib/jobs";
+import { statusActions, useAddNote, useChangeStatus, useCustomerUpdates, useJob, windowLabel, type JobDetail } from "@/lib/jobs";
 import { useMe } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -156,6 +156,7 @@ export function JobView() {
         <RevealItem>
           <Notes job={job} />
         </RevealItem>
+        <CustomerUpdates jobId={job.id} />
       </div>
     </Reveal>
   );
@@ -255,6 +256,41 @@ function CompleteForm({ busy, onSubmit }: { busy: boolean; onSubmit: (values: { 
         Complete the job
       </Button>
     </motion.form>
+  );
+}
+
+/**
+ * Messages drafted for the customer by the notifications subscriber (for now: "your technician
+ * is booked", when the job is assigned). Shown only once there's something to show, and always
+ * as a draft: Truckroll has no way to send them.
+ */
+function CustomerUpdates({ jobId }: { jobId: number }) {
+  const { data: updates } = useCustomerUpdates(jobId);
+  if (!updates?.length) return null;
+
+  return (
+    <motion.section
+      aria-labelledby="updates-heading"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass rounded-3xl p-5"
+    >
+      <h2 id="updates-heading" className="type-title flex items-center gap-2 text-xl">
+        <MailOpen className="size-5 text-muted-foreground" aria-hidden /> For the customer
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">Drafted when the job changed. Not sent: copy it into your email or text when it&apos;s right.</p>
+      <ol className="mt-4 space-y-3">
+        {updates.map((update) => (
+          <li key={update.id} className="rounded-2xl bg-foreground/[0.04] px-4 py-3 text-sm">
+            <p className="font-semibold">{update.subject}</p>
+            <p className="mt-1">{update.body}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Draft, {new Date(update.createdAt).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </motion.section>
   );
 }
 

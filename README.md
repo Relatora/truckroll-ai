@@ -53,8 +53,11 @@ flowchart LR
         HUB["SignalR hub<br/>dispatch board"]
         MCP["MCP server<br/>/mcp, personal tokens"]
         SYNC["Knowledge sync<br/>background worker"]
-        DB[("MySQL 8.4<br/>EF Core 10")]
+        RELAY["Outbox relay"]
+        NOTE["Notifications drafter"]
+        DB[("MySQL 8.4<br/>EF Core 10, outbox")]
         RD[("Redis 8<br/>vector + text + tag index")]
+        KF[("Kafka<br/>truckroll.jobs")]
     end
 
     OL["Ollama on the host<br/>qwen2.5:7b, nomic-embed-text"]
@@ -64,9 +67,12 @@ flowchart LR
     UI -- "/hubs (WebSocket)" --> HUB
     CD -- "HTTP + token" --> MCP
     MCP --> API
-    API --> DB
-    API -- "JobChanged" --> HUB
-    API -- "JobChanged" --> SYNC
+    API -- "change + event,<br/>one transaction" --> DB
+    DB --> RELAY -- "after commit" --> KF
+    KF -- "board group" --> HUB
+    KF -- "knowledge group" --> SYNC
+    KF -- "notifications group" --> NOTE
+    NOTE --> DB
     SYNC --> DB
     SYNC -- "passages" --> RD
     API -- "hybrid search" --> RD
@@ -156,8 +162,8 @@ places that company wants AI. Here's where each part lives, and what's still pla
 | AI in customer service                 | Calls to jobs: structured output, code-side matching and safety rules, approval before anything is booked                        |
 | AI in scheduling and dispatch          | Dispatch suggestions: code ranks, the model explains ([ADR-007](docs/adr/007-code-ranks-the-model-explains.md))                  |
 | AI across the business                 | The cited assistant, and an MCP server so Claude Desktop can work in the CRM as its user ([docs/MCP.md](docs/MCP.md))           |
-| Docker                                 | Aspire runs MySQL and Redis in containers; tests use Testcontainers ([ADR-008](docs/adr/008-aspire-for-local-orchestration.md))  |
-| Kafka                                  | Job changes are events today (`IJobEvents`). An outbox and Kafka topics are **v0.2** ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md)) |
+| Docker                                 | Aspire runs MySQL, Redis and Kafka in containers; tests use Testcontainers, Kafka included ([ADR-008](docs/adr/008-aspire-for-local-orchestration.md))  |
+| Kafka                                  | Every job change and its event commit together through a transactional outbox, and a relay sends them to Kafka. The board, the search index and a notifications drafter each read as a consumer group of their own ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md), [ADR-009](docs/adr/009-one-topic-at-least-once.md)) |
 | Observability, Datadog                 | OpenTelemetry traces and metrics in the Aspire dashboard today, with model calls as spans. Export to Datadog is **v0.2**         |
 | React Native                           | The technician app, offline first, is **v0.3** ([ROADMAP.md](ROADMAP.md))                                                        |
 | Kubernetes, GitHub Actions             | A workflow is committed and runs the same gate script. Kubernetes with Argo CD is **v0.4**                                       |
@@ -261,7 +267,7 @@ rewrites its page in `evals/`.
 ./scripts/ci.ps1     # or ./scripts/ci.sh
 ```
 
-`dotnet format`, a Release build with warnings as errors, 223 xUnit tests against real MySQL and
+`dotnet format`, a Release build with warnings as errors, 239 xUnit tests against real MySQL and
 Redis in Testcontainers, ESLint, `tsc` and a production `next build`. Tests never call a real
 model: a scripted fake chat client and a hashing embedder stand in. GitHub Actions is locked on
 this account, so the gate runs locally before every merge; the workflow in `.github/workflows`
@@ -294,17 +300,16 @@ regenerates the screenshots and the demo video.
   does the words. On a recent GPU an answer takes seconds; on a CPU, expect much longer.
 - **No rate limits yet.** The assistant and MCP aren't throttled, because v0.1 runs on one
   person's machine. They come with hosting in v0.4.
-- **Events stay in one process, for now.** Every job change and its event commit together
-  through a transactional outbox, so none is lost or invented. The relay still delivers them
-  to handlers inside the API; Kafka, for other services to hear them, is the rest of v0.2
-  ([ADR-005](docs/adr/005-modular-monolith-then-kafka.md)).
+- **One relay per deployment.** The outbox relay assumes a single API instance; a second would
+  send the same events again (consumers would ignore them, but it's waste). A lease comes with
+  hosting in v0.4 ([ADR-009](docs/adr/009-one-topic-at-least-once.md)).
 - **Straight-line distance.** Dispatch scores distance as the crow flies, not by road.
 - **Demo data only.** Kestrel Home Comfort, its people, customers and equipment brands are
   made up. Nothing is ever sent to a customer.
 
 ## Stack
 
-.NET 10 · ASP.NET Core · EF Core 10 · MySQL 8.4 · Redis 8 (NRedisStack) · SignalR · Aspire 17 ·
+.NET 10 · ASP.NET Core · EF Core 10 · MySQL 8.4 · Redis 8 (NRedisStack) · Kafka (Confluent.Kafka) · SignalR · Aspire 17 ·
 Microsoft.Extensions.AI · Ollama · Anthropic · ModelContextProtocol · Next.js 16 · React 19 ·
 TypeScript · Tailwind 4 · Motion · MapLibre · TanStack Query · xUnit v3 · Testcontainers ·
 Playwright
