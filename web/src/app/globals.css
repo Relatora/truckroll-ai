@@ -403,6 +403,22 @@
   }
 }
 
+/* A form field on glass. A minimum height, not a fixed one, so textareas grow with their rows. */
+@utility field {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  outline: none;
+  transition: box-shadow 150ms;
+  &:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+  }
+}
+
 /* "Working on it": a band of light runs through the text. Reduced motion leaves it still. */
 @utility shimmer-text {
   background: linear-gradient(

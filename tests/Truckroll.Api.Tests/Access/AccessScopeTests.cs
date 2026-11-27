@@ -62,6 +62,9 @@ public sealed class AccessScopeTests(TruckrollApiFactory factory)
         await using var _ = services;
         var morgan = await ScopeForAsync(db, SignedInClients.Owner);
 
+        // One snapshot for both counts: other tests insert customers and jobs in parallel, and a
+        // row landing between two separate counts would look like a record the owner can't see.
+        await using var snapshot = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.RepeatableRead, Ct);
         Assert.Equal(await db.Customers.CountAsync(Ct), await morgan.Customers(db).CountAsync(Ct));
         Assert.Equal(await db.Jobs.CountAsync(Ct), await morgan.Jobs(db).CountAsync(Ct));
     }

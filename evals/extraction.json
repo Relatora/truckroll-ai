@@ -1,0 +1,29 @@
+{
+  "about": "Extraction eval for the calls inbox. Each case is a call and the fields a careful CSR would record from it. Seed calls are found in the inbox by a phrase from their transcript; the others are pasted in, analysed, and dismissed afterwards. day is today, tomorrow, a weekday name, or null for no agreed day; hour is the window's start (8, 10, 12, 14) or null; customer is a last name, or new, or none. Several acceptable values are listed where a CSR could reasonably record either. Run: dotnet run --project tools/Truckroll.Eval -- --suite extraction --write",
+  "cases": [
+    { "id": "raman-no-heat", "find": "Priya Raman on Maple Street",
+      "expect": { "type": ["Repair"], "priority": ["Emergency"], "equipment": ["Furnace"], "customer": "Raman", "day": "today", "hour": 12, "safety": false } },
+    { "id": "hartley-boiler", "find": "Doug Hartley. Birch Crescent",
+      "expect": { "type": ["Repair"], "priority": ["Normal", "Urgent"], "equipment": ["Boiler"], "customer": "Hartley", "day": "Friday", "hour": 8, "safety": false } },
+    { "id": "new-caller-ac-quote", "find": "Andre Fontaine",
+      "expect": { "type": ["Estimate"], "priority": ["Normal"], "equipment": ["AirConditioner", "HeatPump", "None"], "customer": "new", "day": null, "hour": null, "safety": false } },
+    { "id": "mensah-water", "find": "Kwame Mensah, 231 Lakeview",
+      "expect": { "type": ["Repair"], "priority": ["Urgent", "Normal"], "equipment": ["Furnace"], "customer": "Mensah", "day": "tomorrow", "hour": 8, "safety": false } },
+    { "id": "kowalski-hot-water", "find": "Sandra Kowalski, Riverbend Road",
+      "expect": { "type": ["Repair"], "priority": ["Normal", "Urgent"], "equipment": ["TanklessWaterHeater"], "customer": "Kowalski", "day": "Wednesday", "hour": 14, "safety": false } },
+    { "id": "gas-smell", "find": "I think I smell gas in my basement",
+      "expect": { "type": ["Repair"], "priority": ["Emergency"], "equipment": ["WaterHeater"], "customer": "none", "day": "today", "hour": null, "safety": true } },
+    { "id": "chen-heat-pump", "branch": "CAM",
+      "transcript": "CSR: Kestrel Home Comfort, Cambridge, Jess speaking.\nCaller: Hi, Mei Chen, 7 Juniper Place. The heat pump's only blowing lukewarm air since the cold snap.\nCSR: Is the furnace backing it up at all?\nCaller: I think so, the house is about nineteen. It's not urgent, just annoying.\nCSR: Okay. I can book Monday morning, ten to twelve.\nCaller: Monday works.\nCSR: Great, I'll send a confirmation.",
+      "expect": { "type": ["Repair"], "priority": ["Normal"], "equipment": ["HeatPump"], "customer": "Chen", "day": "Monday", "hour": 10, "safety": false } },
+    { "id": "moreau-tune-up", "branch": "STR",
+      "transcript": "CSR: Kestrel Home Comfort, Stratford, Lee speaking.\nCaller: Hello, it's Linda Moreau on Heritage Drive. I got your reminder. I'd like to book the furnace tune-up for the winter.\nCSR: Of course. You're on the Comfort Club, so it's included. Would Tuesday at noon work? That's a noon to two window.\nCaller: Tuesday at noon is fine. Could they check the humidifier pad too?\nCSR: I'll add a note. You'll get a confirmation by email.",
+      "expect": { "type": ["Maintenance"], "priority": ["Normal"], "equipment": ["Furnace"], "customer": "Moreau", "day": "Tuesday", "hour": 12, "safety": false } },
+    { "id": "becker-co-alarm", "branch": "CAM",
+      "transcript": "CSR: Kestrel Home Comfort, Cambridge, Jess speaking.\nCaller: It's Tom Becker, 63 Cedar Road. Our carbon monoxide alarm is going off in the basement by the furnace.\nCSR: Tom, please get everyone out of the house now, pets too, and call 911 from outside. Don't go back in until the fire department says it's safe.\nCaller: We're going. The furnace is pretty old.\nCSR: Once they've cleared the house, we'll send a gas technician today to inspect the furnace and venting.",
+      "expect": { "type": ["Repair"], "priority": ["Emergency"], "equipment": ["Furnace"], "customer": "Becker", "day": "today", "hour": null, "safety": true } },
+    { "id": "hartley-leak", "branch": "KIT",
+      "transcript": "CSR: Kestrel Home Comfort, Kitchener, Sam speaking.\nCaller: Doug Hartley again, 88 Birch Crescent. Now it's the water heater. There's water pouring out the bottom of the tank, the floor's getting wet.\nCSR: Can you turn the cold water valve on top of the tank off for me?\nCaller: I did, it's still dripping a fair bit.\nCSR: Okay, that's an active leak, we'll get someone there this afternoon, between two and four.\nCaller: Thank you.",
+      "expect": { "type": ["Repair"], "priority": ["Emergency", "Urgent"], "equipment": ["WaterHeater"], "customer": "Hartley", "day": "today", "hour": 14, "safety": false } }
+  ]
+}
