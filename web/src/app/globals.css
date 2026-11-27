@@ -88,6 +88,19 @@
 :root {
   --radius: 0.75rem;
 
+  /* Chart series: one fixed colour per branch (KIT, GUE, CAM, BRA, STR), then "all branches".
+     The dataviz reference palette's slots 1-5 and 7, validated against the glass surface
+     (#fafbfd): every check passes; aqua, yellow and magenta sit under 3:1, so every chart
+     ships a legend, a tooltip and a table view. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-all: #6250d6;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+
   --background: #f6f7fb;
   --foreground: #0e1526;
   --card: #ffffff;
@@ -158,6 +171,16 @@
 /* ------------------------------------------------------------------ After hours */
 
 .dark {
+  /* The same hues stepped for the dark surface (#0c1222): every check passes, all >= 3:1. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-all: #9085e9;
+  --chart-grid: #232a3d;
+  --chart-axis: #39415a;
+
   --background: #060a14;
   --foreground: #edf1fa;
   --card: #0e1527;
