@@ -14,6 +14,7 @@ that's a sign we owe an ADR.
 | [006](006-same-origin-api.md)                       | Put the API behind the web app's origin and sign in with a cookie           | Accepted |
 | [007](007-code-ranks-the-model-explains.md)         | Code ranks dispatch suggestions; the model only explains them               | Accepted |
 | [008](008-aspire-for-local-orchestration.md)        | Use Aspire to run the stack locally                                         | Accepted |
+| [009](009-one-topic-at-least-once.md)               | Send job events on one Kafka topic keyed by job, at least once, to idempotent consumers | Accepted |
 
 New ADRs start from [the template](000-template.md) and add a row here. Never edit an accepted
 ADR's decision. Write a new one that supersedes it, so the history stays readable.

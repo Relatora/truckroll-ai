@@ -8,6 +8,12 @@ namespace Truckroll.Api.Features.Jobs;
 public sealed record JobChanged(int JobId, string Number, int BranchId, JobStatus Status, int? TechnicianId, string Change, string ChangedBy, DateTimeOffset At)
 {
     /// <summary>
+    /// The event's identity, stamped when it's written to the outbox and the same on every
+    /// delivery. A consumer that must not act twice (a drafted notification) keys on it.
+    /// </summary>
+    public Guid EventId { get; init; }
+
+    /// <summary>
     /// The event's name on the wire: <c>job.booked</c>, <c>job.assigned</c>, <c>job.completed</c>.
     /// Derived from <see cref="Change"/>, which is written for people ("assigned to Nadia Kowalczyk").
     /// </summary>
@@ -31,8 +37,26 @@ public interface IJobEvents
 }
 
 /// <summary>A subscriber to job changes. Register as many as needed; each gets every event.</summary>
+/// <remarks>
+/// Delivery is at least once: after a crash or a broker hiccup the same event can arrive again.
+/// A handler either doesn't mind (re-indexing a job, re-broadcasting a board update) or keys on
+/// <see cref="JobChanged.EventId"/> so the second delivery changes nothing.
+/// </remarks>
 public interface IJobChangeHandler
 {
+    /// <summary>
+    /// The subscription's name. With Kafka it's the consumer group, so each subscription keeps
+    /// its own place in the stream and a slow one never holds the others back.
+    /// </summary>
+    string Subscription => GetType().Name;
+
+    /// <summary>
+    /// True for subscribers that only care about what happens from now on, in this process (the
+    /// board's live updates). They skip history after a restart, and every API instance gets its
+    /// own copy of each event, because each instance holds its own browser connections.
+    /// </summary>
+    bool LiveOnly => false;
+
     Task HandleAsync(JobChanged change, CancellationToken cancellationToken);
 }
 
@@ -55,13 +79,14 @@ public sealed class OutboxJobEvents(TruckrollDbContext db) : IJobEvents
                 "Publish job events inside the transaction that saves the change (db.BeginOrJoinTransactionAsync).");
         }
 
+        var stamped = change with { EventId = Guid.NewGuid() };
         db.Add(new OutboxMessage
         {
-            EventId = Guid.NewGuid(),
-            Type = change.Type,
-            JobId = change.JobId,
-            Payload = JsonSerializer.Serialize(change, Json),
-            OccurredAt = change.At,
+            EventId = stamped.EventId,
+            Type = stamped.Type,
+            JobId = stamped.JobId,
+            Payload = JsonSerializer.Serialize(stamped, Json),
+            OccurredAt = stamped.At,
         });
         await db.SaveChangesAsync(cancellationToken);
     }

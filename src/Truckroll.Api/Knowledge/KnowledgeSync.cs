@@ -22,6 +22,8 @@ public sealed class KnowledgeQueue : IJobChangeHandler
 
     internal ChannelReader<IndexRequest> Reader => _channel.Reader;
 
+    public string Subscription => "knowledge";
+
     public Task HandleAsync(JobChanged change, CancellationToken cancellationToken)
     {
         _channel.Writer.TryWrite(new IndexRequest.ReindexJob(change.JobId));
