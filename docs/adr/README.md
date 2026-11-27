@@ -11,9 +11,10 @@ that's a sign we owe an ADR.
 | [003](003-retrieval-in-redis.md) | Keep the search index in Redis 8, with MySQL as the source of truth | Accepted |
 | [004](004-models-behind-microsoft-extensions-ai.md) | Put every model behind Microsoft.Extensions.AI, with Ollama by default | Accepted |
 | [006](006-same-origin-api.md)                 | Put the API behind the web app's origin and sign in with a cookie | Accepted |
+| [007](007-code-ranks-the-model-explains.md) | Code ranks dispatch suggestions; the model only explains them | Accepted |
 | [008](008-aspire-for-local-orchestration.md)  | Use Aspire to run the stack locally        | Accepted |
 
-Numbers 005 and 007 are reserved for decisions already planned in
+Number 005 is reserved for decisions already planned in
 [DESIGN.md](../DESIGN.md): Kafka timing and dispatch
 ranking. Each is written when the code that implements it lands.
 

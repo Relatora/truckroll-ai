@@ -7,12 +7,14 @@ import { useParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Reveal, RevealItem } from "@/components/motion/reveal";
-import { SpotlightCard } from "@/components/motion/spotlight-card";
+import { SuggestionsPanel } from "@/components/dispatch/suggestions-panel";
 import { JobStepper, StatusBadge } from "@/components/jobs/job-status";
+import { SpotlightCard } from "@/components/motion/spotlight-card";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { equipmentLabels, type JobStatus } from "@/lib/customers";
 import { statusActions, useAddNote, useChangeStatus, useJob, windowLabel, type JobDetail } from "@/lib/jobs";
+import { useMe } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const LICENCES: Record<string, string> = {
@@ -28,6 +30,7 @@ const LICENCES: Record<string, string> = {
 export function JobView() {
   const { id } = useParams<{ id: string }>();
   const { data: job, error, isPending } = useJob(Number(id));
+  const { data: me } = useMe();
 
   if (isPending) {
     return <div className="glass mx-auto h-64 w-full max-w-5xl animate-pulse rounded-3xl" aria-label="Loading job" />;
@@ -72,6 +75,13 @@ export function JobView() {
         <JobStepper status={job.status} />
       </RevealItem>
 
+      {/* For a job still to be done, the next decision is who goes: put that first. */}
+      {me?.can.canDispatch && (job.status === "Scheduled" || job.status === "Dispatched") && (
+        <RevealItem className="mt-8">
+          <SuggestionsPanel jobId={job.id} jobNumber={job.number} />
+        </RevealItem>
+      )}
+
       <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-4">
           <RevealItem>
@@ -100,7 +110,7 @@ export function JobView() {
                     {job.technician.name}
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">Not assigned yet. Assign from the dispatch board.</span>
+                  <span className="text-muted-foreground">Not assigned yet.</span>
                 )}
               </Fact>
             </SpotlightCard>

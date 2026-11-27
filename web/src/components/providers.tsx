@@ -3,7 +3,6 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,17 +10,18 @@ import { ApiError } from "@/lib/api";
 
 /** Client-side providers for the whole app: theme, server state, tooltips and toasts. */
 export function Providers({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
   // One client per browser session, created lazily so the server never shares one between users.
   const [queryClient] = useState(() => {
-    // Any 401 means the session ended (expired, or signed out in another tab): clear what we
-    // cached for that user and send them to sign in, then back to where they were.
+    // Any 401 means the session ended (expired, signed out in another tab, or the account is
+    // gone): send them to sign in, then back to where they were. Once, and as a full page load,
+    // which also throws away everything cached for that user. Clearing the cache in place made
+    // every mounted query refetch, each 401 restarted the navigation, and it never finished.
+    let leaving = false;
     const onError = (error: unknown) => {
-      if (error instanceof ApiError && error.status === 401 && window.location.pathname !== "/sign-in") {
-        client.clear();
+      if (error instanceof ApiError && error.status === 401 && window.location.pathname !== "/sign-in" && !leaving) {
+        leaving = true;
         const next = encodeURIComponent(window.location.pathname + window.location.search);
-        router.replace(`/sign-in?next=${next}`);
+        window.location.replace(`/sign-in?next=${next}`);
       }
     };
 
@@ -41,7 +41,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider delayDuration={200}>
             {children}
-            <Toaster position="bottom-right" />
+            {/* On a phone the dock sits along the bottom; toasts (and their Undo) go above it. */}
+            <Toaster position="bottom-right" mobileOffset={{ bottom: 88 }} />
           </TooltipProvider>
         </QueryClientProvider>
       </MotionConfig>

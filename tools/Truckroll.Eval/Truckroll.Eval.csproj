@@ -1,12 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The retrieval eval. It talks to a running stack over HTTP like any client would, so it
-    measures exactly what the assistant gets: real embeddings, real Redis, real access rules.
+    The evals. Retrieval talks to a running stack over HTTP like any client would, so it measures
+    exactly what the assistant gets: real embeddings, real Redis, real access rules. Dispatch runs
+    the API's own scorer offline.
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The dispatch suite runs the API's own scorer, offline. -->
+    <ProjectReference Include="..\..\src\Truckroll.Api\Truckroll.Api.csproj" />
+  </ItemGroup>
 
 </Project>
