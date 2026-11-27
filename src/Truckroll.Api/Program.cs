@@ -5,6 +5,7 @@ using Truckroll.Api.Common;
 using Truckroll.Api.Data;
 using Truckroll.Api.Features.Assistant;
 using Truckroll.Api.Features.Auth;
+using Truckroll.Api.Features.Calls;
 using Truckroll.Api.Features.Branches;
 using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IJobEvents, InProcessJobEvents>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IJobChangeHandler, DispatchHubBroadcaster>();
 builder.Services.AddScoped<SuggestionExplainer>();
+builder.Services.AddScoped<CallAnalyser>();
 builder.Services.AddProblemDetails();
 
 // Enums go over the wire as names ("Dispatched"), the same way they're stored, so the web app's
@@ -73,6 +75,7 @@ crm.MapDispatchEndpoints();
 crm.MapSuggestionEndpoints();
 crm.MapKnowledgeEndpoints();
 crm.MapAssistantEndpoints();
+crm.MapCallEndpoints();
 
 // Live updates for the dispatch board, behind the same cookie (DispatchHub is [Authorize]).
 app.MapHub<DispatchHub>(DispatchHub.Path);

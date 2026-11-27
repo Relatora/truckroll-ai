@@ -60,6 +60,15 @@ It asks the 61 questions in [evals/retrieval.json](evals/retrieval.json) in ever
 regenerates [evals/results.md](evals/results.md). Today, hybrid finds the right passage in the
 top 5 for every question, and ranks it first 84% of the time, against 80% for vectors alone.
 
+The same tool runs two more suites, and writes each one's results page:
+
+- **`--suite dispatch`** runs offline. It puts 20 dispatcher-labelled scenarios through the
+  ranking code and writes [dispatch-results.md](evals/dispatch-results.md). The expected
+  technician is in the top three in every scenario.
+- **`--suite extraction`** needs the stack running. It sends 10 labelled calls through the real
+  model and writes [extraction-results.md](evals/extraction-results.md). 94% of fields come back
+  right.
+
 ## Quality gate
 
 ```powershell

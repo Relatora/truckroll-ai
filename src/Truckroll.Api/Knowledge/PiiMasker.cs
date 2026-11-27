@@ -20,6 +20,12 @@ public static partial class PiiMasker
     public static string Mask(string text) =>
         PhonePattern().Replace(EmailPattern().Replace(text, Email), Phone);
 
+    /// <summary>The phone pattern, for <see cref="PiiVault"/>.</summary>
+    internal static Regex Phones => PhonePattern();
+
+    /// <summary>The email pattern, for <see cref="PiiVault"/>.</summary>
+    internal static Regex Emails => EmailPattern();
+
     /// <summary>
     /// North American numbers as people write them: <c>519-555-0142</c>, <c>(519) 555-0142</c>,
     /// <c>519.555.0142</c>, <c>519 555 0142</c>, <c>5195550142</c>, with an optional <c>+1</c> or

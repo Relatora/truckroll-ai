@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { NotBuiltYet } from "@/components/shell/not-built-yet";
+import { Suspense } from "react";
+import { CallsView } from "./calls-view";
 
 export const metadata: Metadata = { title: "Calls" };
 
 export default function Page() {
-  return <NotBuiltYet title="Calls" description="This morning's calls, summarised into tickets and follow-ups for you to approve." issue={15} />;
+  // The view reads ?tab and ?call, which needs a Suspense boundary under cacheComponents.
+  return (
+    <Suspense>
+      <CallsView />
+    </Suspense>
+  );
 }
