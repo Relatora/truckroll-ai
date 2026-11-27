@@ -44,6 +44,14 @@ public static class DevEndpoints
             .WithSummary("Rebuild the knowledge index from MySQL and report what it took (development only).")
             .ExcludeFromDescription();
 
+        // Whether the index has finished building (end-to-end tests wait on this after a reset).
+        // A queued rebuild counts as not ready: until it starts, the old index still looks current.
+        routes.MapGet("/dev/index", async (PassageIndex index, KnowledgeQueue queue) =>
+                Results.Ok(new { ready = !queue.RebuildPending && await index.IsCurrentAsync(), passages = await index.CountAsync() }))
+            .WithName("IndexStatus")
+            .WithSummary("Whether the knowledge index is built and current, and how many passages it holds (development only).")
+            .ExcludeFromDescription();
+
         return routes;
     }
 

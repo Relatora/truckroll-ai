@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { Ban, Check } from "lucide-react";
-import { useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +79,7 @@ export function Lanes({
     const job = dragging;
     setDragging(null);
     if (!job || (job.technicianId ?? null) === (technician?.id ?? null)) return;
+    if (technician && !holdsLicence(technician, job.requiredCertification)) return;
     onMove(job, technician?.id ?? null);
   }
 
@@ -86,7 +87,8 @@ export function Lanes({
     const key = technician ? String(technician.id) : "waiting";
     return {
       onDragOver: (event: DragEvent) => {
-        if (!dragging) return;
+        // A lane the job's licence rules out never accepts it: the browser shows "no drop" there.
+        if (!dragging || (technician && !holdsLicence(technician, dragging.requiredCertification))) return;
         event.preventDefault();
         setOver(key);
       },
@@ -115,6 +117,7 @@ export function Lanes({
           <LaneLabel title="Waiting" detail={`${waiting.length} ${waiting.length === 1 ? "job" : "jobs"} to assign`} muted />
           <Track
             {...laneProps(null)}
+            aria-label="Waiting lane"
             rows={waitingRows.rows}
             highlight={over === "waiting" ? "ok" : dragging && dragging.technicianId !== null ? "target" : undefined}
             dashed
@@ -139,7 +142,8 @@ export function Lanes({
                   warning={dragging && !allowed ? `No ${LICENCE_NAMES[dragging.requiredCertification] ?? "licence"}` : undefined}
                 />
                 <Track
-                  {...(allowed ? laneProps(technician) : {})}
+                  {...laneProps(technician)}
+                  aria-label={`${technician.name}'s lane`}
                   rows={packed.rows}
                   highlight={!dragging ? undefined : !allowed ? "blocked" : over === key ? "ok" : "target"}
                   now={nowPercent}
@@ -184,7 +188,9 @@ function Track({
   rows: number;
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
+    // A named group, so a screen reader announces whose lane it's in (and tests can find it).
     <div
+      role="group"
       {...handlers}
       style={{ height: rows * ROW + 12 }}
       className={cn(
@@ -222,75 +228,101 @@ function Block({
   const emergency = job.priority === "Emergency" && job.status !== "Completed";
   const left = Math.max(0, at(job.windowStart));
   const width = Math.min(100 - left, at(job.windowEnd) - at(job.windowStart));
+  const place = { left: `${left}%`, width: `${width}%`, top: 6 + row * ROW, height: ROW - 6 };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
 
+  // Two layers on purpose. The motion wrapper animates the block between lanes (layoutId). The
+  // native button inside does the drag: motion claims onDragStart/onDragEnd for its own gesture
+  // system, so on a motion element the browser's drag events never reached these handlers, and
+  // dragging with a mouse silently did nothing (found by the end-to-end test).
   const block = (
-    <motion.button
-      layoutId={`job-${job.id}`}
-      type="button"
-      draggable={movable}
-      onDragStart={(event) => {
-        const dragEvent = event as unknown as DragEvent;
-        dragEvent.dataTransfer.effectAllowed = "move";
-        dragEvent.dataTransfer.setData("text/plain", String(job.id));
-        onDrag(job);
-      }}
-      onDragEnd={() => onDrag(null)}
-      onClick={() => onSelect(job.id)}
-      transition={{ type: "spring", stiffness: 300, damping: 28 }}
-      className={cn(
-        "absolute z-[5] flex items-center gap-1.5 overflow-hidden rounded-lg pr-2 pl-3.5 text-left text-[0.8rem] font-medium text-foreground outline-none before:absolute before:inset-y-1.5 before:left-1 before:w-1 before:rounded-full focus-visible:ring-3 focus-visible:ring-ring/50",
-        emergency ? "bg-ember text-white glow-ember before:bg-white/70" : TONE[equipmentTone(job.equipmentKind)],
-        job.status === "Completed" && "opacity-55",
-        movable && "cursor-grab active:cursor-grabbing",
-        selected && "ring-2 ring-foreground",
-      )}
-      style={{ left: `${left}%`, width: `${width}%`, top: 6 + row * ROW, height: ROW - 6 }}
-      title={`${job.number}: ${job.summary} (${job.customer}, ${job.street})`}
-    >
-      {job.status === "Completed" && <Check className="size-3.5 shrink-0" />}
-      {job.status === "InProgress" && <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-violet" />}
-      <span className="truncate">{job.street}</span>
-    </motion.button>
+    <motion.div layoutId={`job-${job.id}`} transition={{ type: "spring", stiffness: 300, damping: 28 }} className="absolute z-[5]" style={place}>
+      <button
+        ref={button}
+        type="button"
+        draggable={movable}
+        aria-haspopup={movable ? "menu" : undefined}
+        aria-expanded={movable ? menuOpen : undefined}
+        onDragStart={(event: DragEvent) => {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", String(job.id));
+          onDrag(job);
+        }}
+        onDragEnd={() => onDrag(null)}
+        // A click (never fired by a drag) selects the job and opens its menu; Enter and Space on a
+        // button are clicks too, so the keyboard gets the same.
+        onClick={() => {
+          onSelect(job.id);
+          if (movable) setMenuOpen(true);
+        }}
+        className={cn(
+          "relative flex h-full w-full items-center gap-1.5 overflow-hidden rounded-lg pr-2 pl-3.5 text-left text-[0.8rem] font-medium text-foreground outline-none before:absolute before:inset-y-1.5 before:left-1 before:w-1 before:rounded-full focus-visible:ring-3 focus-visible:ring-ring/50",
+          emergency ? "bg-ember text-white glow-ember before:bg-white/70" : TONE[equipmentTone(job.equipmentKind)],
+          job.status === "Completed" && "opacity-55",
+          movable && "cursor-grab active:cursor-grabbing",
+          selected && "ring-2 ring-foreground",
+        )}
+        title={`${job.number}: ${job.summary} (${job.customer}, ${job.street})`}
+      >
+        {job.status === "Completed" && <Check className="size-3.5 shrink-0" />}
+        {job.status === "InProgress" && <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-violet" />}
+        <span className="truncate">{job.street}</span>
+      </button>
+    </motion.div>
   );
 
   if (!movable) {
     return block;
   }
 
-  // The keyboard and touch way to do what dragging does.
+  // The keyboard and touch way to do what dragging does. The menu can't hang off the block
+  // itself: its trigger opens on pointer *down*, and the open menu's overlay then swallows the
+  // drag, which made dragging with a real mouse impossible (found by the end-to-end test). So the
+  // block is a plain button, and the menu anchors to an invisible stand-in laid over it.
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild onKeyDown={(event) => event.key === "Enter" && event.preventDefault()}>
-        {block}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="glass-strong w-64 rounded-xl">
-        <DropdownMenuLabel className="font-normal">
-          <span className="block font-semibold">{job.number}</span>
-          <span className="block text-xs text-muted-foreground">{job.summary}</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {board.technicians.map((technician) => {
-          const allowed = holdsLicence(technician, job.requiredCertification);
-          return (
-            <DropdownMenuItem key={technician.id} disabled={!allowed || technician.id === job.technicianId} onSelect={() => onMove(job, technician.id)}>
-              <span className="size-2 rounded-full" style={{ background: technician.color }} />
-              <span className="flex-1">{technician.name}</span>
-              {!allowed && (
-                <span className="flex items-center gap-1 text-xs text-destructive">
-                  <Ban className="size-3" /> {LICENCE_NAMES[job.requiredCertification]}
-                </span>
-              )}
-            </DropdownMenuItem>
-          );
-        })}
-        {job.technicianId !== null && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onMove(job, null)}>Back to waiting</DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      {block}
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <span aria-hidden tabIndex={-1} className="pointer-events-none absolute" style={place} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="glass-strong w-64 rounded-xl"
+          onCloseAutoFocus={(event) => {
+            // Back to the job, not the invisible stand-in.
+            event.preventDefault();
+            button.current?.focus();
+          }}
+        >
+          <DropdownMenuLabel className="font-normal">
+            <span className="block font-semibold">{job.number}</span>
+            <span className="block text-xs text-muted-foreground">{job.summary}</span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {board.technicians.map((technician) => {
+            const allowed = holdsLicence(technician, job.requiredCertification);
+            return (
+              <DropdownMenuItem key={technician.id} disabled={!allowed || technician.id === job.technicianId} onSelect={() => onMove(job, technician.id)}>
+                <span className="size-2 rounded-full" style={{ background: technician.color }} />
+                <span className="flex-1">{technician.name}</span>
+                {!allowed && (
+                  <span className="flex items-center gap-1 text-xs text-destructive">
+                    <Ban className="size-3" /> {LICENCE_NAMES[job.requiredCertification]}
+                  </span>
+                )}
+              </DropdownMenuItem>
+            );
+          })}
+          {job.technicianId !== null && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => onMove(job, null)}>Back to waiting</DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 
