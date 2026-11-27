@@ -120,6 +120,7 @@ public static class KnowledgeServiceExtensions
     {
         services.AddSingleton<PassageIndex>();
         services.AddScoped<KnowledgeIndexer>();
+        services.AddScoped<KnowledgeSearch>();
         services.AddSingleton<KnowledgeQueue>();
         services.AddSingleton<IJobChangeHandler>(provider => provider.GetRequiredService<KnowledgeQueue>());
         services.AddHostedService<KnowledgeSyncService>();

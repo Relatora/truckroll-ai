@@ -9,6 +9,7 @@ using Truckroll.Api.Features.Customers;
 using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Jobs;
+using Truckroll.Api.Features.Knowledge;
 using Truckroll.Api.Features.Status;
 using Truckroll.Api.Knowledge;
 
@@ -66,6 +67,7 @@ crm.MapCustomerEndpoints();
 crm.MapBranchEndpoints();
 crm.MapJobEndpoints();
 crm.MapDispatchEndpoints();
+crm.MapKnowledgeEndpoints();
 
 // Live updates for the dispatch board, behind the same cookie (DispatchHub is [Authorize]).
 app.MapHub<DispatchHub>(DispatchHub.Path);
