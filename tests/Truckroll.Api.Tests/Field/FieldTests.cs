@@ -56,6 +56,35 @@ public sealed class FieldTests(TruckrollApiFactory factory, FieldTests.NadiasPho
 
     // ------------------------------------------------------------------ sign-in and access
 
+    [Theory]
+    [InlineData(TruckrollApiFactory.FieldAppOrigin, true)]
+    [InlineData("https://elsewhere.example", false)]
+    public async Task Only_the_listed_app_origin_may_call_the_field_api_from_a_browser(string origin, bool allowed)
+    {
+        using var preflight = new HttpRequestMessage(HttpMethod.Options, "/api/field/sync");
+        preflight.Headers.Add("Origin", origin);
+        preflight.Headers.Add("Access-Control-Request-Method", "POST");
+        preflight.Headers.Add("Access-Control-Request-Headers", "authorization,content-type");
+
+        using var response = await factory.CreateClient().SendAsync(preflight, Ct);
+
+        Assert.Equal(allowed, response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins) && origins.Single() == origin);
+        // A token, never a cookie: credentials are never allowed, whoever asks.
+        Assert.False(response.Headers.Contains("Access-Control-Allow-Credentials"));
+    }
+
+    [Fact]
+    public async Task The_rest_of_the_api_allows_no_other_origin()
+    {
+        using var preflight = new HttpRequestMessage(HttpMethod.Options, "/api/jobs");
+        preflight.Headers.Add("Origin", TruckrollApiFactory.FieldAppOrigin);
+        preflight.Headers.Add("Access-Control-Request-Method", "GET");
+
+        using var response = await factory.CreateClient().SendAsync(preflight, Ct);
+
+        Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
+    }
+
     [Fact]
     public async Task Only_a_technician_gets_a_field_token()
     {

@@ -4,8 +4,25 @@
     {
       "name": "truckroll",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--project", "src/Truckroll.AppHost", "--launch-profile", "http"],
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "src/Truckroll.AppHost",
+        "--launch-profile",
+        "http"
+      ],
       "port": 3000
+    },
+    {
+      "name": "truckroll-field",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "mobile",
+        "run",
+        "serve:web"
+      ],
+      "port": 8081
     }
   ]
 }

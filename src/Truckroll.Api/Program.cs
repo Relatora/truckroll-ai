@@ -66,6 +66,15 @@ builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
+// The field app's web build runs on an origin of its own (Expo's dev server, during
+// development), unlike the Next.js app, which shares the API's. It sends a token, never a
+// cookie, so allowing its origin exposes nothing a cookie protects. Phones send no Origin at
+// all and never touch this. Only /api/field opts in, and only listed origins get through.
+builder.Services.AddCors(cors => cors.AddPolicy(FieldEndpoints.CorsPolicy, policy => policy
+    .WithOrigins(builder.Configuration.GetSection("Field:AppOrigins").Get<string[]>() ?? [])
+    .WithHeaders("Authorization", "Content-Type")
+    .WithMethods("GET", "POST")));
+
 var app = builder.Build();
 
 await app.MigrateDatabaseAsync();
@@ -73,6 +82,7 @@ await app.MigrateDatabaseAsync();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
