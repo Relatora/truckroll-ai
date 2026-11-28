@@ -57,12 +57,12 @@ public sealed class DashboardTests(TruckrollApiFactory factory)
     public async Task Completed_revenue_and_first_time_fix_match_a_hand_written_query()
     {
         using var owner = await factory.SignedInAsAsync(SignedInClients.Owner);
-        var dashboard = await GetAsync(owner, "?days=90");
-        var from = JobEndpoints.DayBounds(dashboard.Window.From).Start.UtcDateTime;
-        var to = JobEndpoints.DayBounds(dashboard.Window.To).End.UtcDateTime;
+        var window = (await GetAsync(owner, "?days=90")).Window;
+        var from = JobEndpoints.DayBounds(window.From).Start.UtcDateTime;
+        var to = JobEndpoints.DayBounds(window.To).End.UtcDateTime;
 
         // The same question asked of MySQL directly, without EF's LINQ or the dashboard's C#.
-        var rows = await WithDbAsync(db => db.Database.SqlQuery<SqlRow>($"""
+        Task<List<SqlRow>> AskMySqlAsync() => WithDbAsync(db => db.Database.SqlQuery<SqlRow>($"""
             SELECT b.Code AS Code,
                    CAST(COUNT(*) AS DECIMAL(18,2)) AS Completed,
                    COALESCE(SUM(j.InvoiceTotal), 0) AS Revenue,
@@ -71,7 +71,23 @@ public sealed class DashboardTests(TruckrollApiFactory factory)
             FROM Jobs j JOIN Branches b ON b.Id = j.BranchId
             WHERE j.Status = 'Completed' AND j.CompletedAt >= {from} AND j.CompletedAt < {to}
             GROUP BY b.Code
+            ORDER BY b.Code
             """).ToListAsync(Ct));
+
+        // Other tests complete jobs while this runs (the field app's, for one), so a completion can
+        // land between the dashboard's read and MySQL's. Compare only when MySQL gave the same
+        // answer before and after the dashboard's read: nothing changed in between.
+        List<SqlRow> rows;
+        DashboardResponse dashboard;
+        var attempts = 0;
+        do
+        {
+            var before = await AskMySqlAsync();
+            dashboard = await GetAsync(owner, "?days=90");
+            rows = await AskMySqlAsync();
+            if (before.SequenceEqual(rows)) break;
+        }
+        while (++attempts < 5);
 
         foreach (var branch in dashboard.ByBranch)
         {

@@ -2,6 +2,7 @@ using System.Data;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 using Truckroll.Api.Access;
 using Truckroll.Api.Common;
 using Truckroll.Api.Features.Dispatch;
@@ -148,7 +149,7 @@ public static class CallEndpoints
     // ------------------------------------------------------------------ the person's part
 
     internal static async Task<Results<Ok<CallDetail>, NotFound, ValidationProblem, Conflict<ProblemMessage>, ForbidHttpResult>> ApproveAsync(
-        int id, ApproveCallRequest request, AccessScope scope, TruckrollDbContext db, CompanyClock clock, IJobEvents events, CancellationToken cancellationToken)
+        int id, ApproveCallRequest request, AccessScope scope, TruckrollDbContext db, MySqlDataSource numbers, CompanyClock clock, IJobEvents events, CancellationToken cancellationToken)
     {
         if (!scope.CanReviewCalls || !scope.CanBookJobs)
         {
@@ -229,7 +230,7 @@ public static class CallEndpoints
         // licence rules and broadcast to the dispatch board.
         var booked = await JobEndpoints.BookAsync(
             new BookJobRequest(propertyId!.Value, request.EquipmentId, request.Type, request.Priority, request.Date, request.WindowStartHour, request.Summary),
-            scope, db, clock, events, cancellationToken);
+            scope, db, numbers, clock, events, cancellationToken);
         if (booked.Result is not Created<JobDetail> created)
         {
             await transaction.RollbackAsync(cancellationToken);

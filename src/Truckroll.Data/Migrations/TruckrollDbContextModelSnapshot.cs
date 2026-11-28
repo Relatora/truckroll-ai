@@ -298,6 +298,20 @@ namespace Truckroll.Data.Migrations
                     b.ToTable("CallRecords");
                 });
 
+            modelBuilder.Entity("Truckroll.Data.Domain.Counter", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("Counters");
+                });
+
             modelBuilder.Entity("Truckroll.Data.Domain.Customer", b =>
                 {
                     b.Property<int>("Id")

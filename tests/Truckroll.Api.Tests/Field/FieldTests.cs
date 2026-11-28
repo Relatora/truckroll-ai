@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Truckroll.Api.Features.Field;
 using Truckroll.Api.Tests.Infrastructure;
@@ -58,9 +59,23 @@ public sealed class FieldTests(TruckrollApiFactory factory, FieldTests.NadiasPho
     [Fact]
     public async Task Only_a_technician_gets_a_field_token()
     {
+        // The wrong password goes to a technician of its own, not Nadia. A failed attempt bumps
+        // the user's lockout counter; the next correct sign-in resets it, and when several tests
+        // sign Nadia in at that moment, all but one lose Identity's concurrency check and get a
+        // 401 (found by the gate, #50).
+        const string email = "field-wrong-password@kestrel.test";
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+            if (await users.FindByEmailAsync(email) is null)
+            {
+                await users.CreateAsync(new AppUser { UserName = email, Email = email, DisplayName = "Wrong Password", Role = UserRole.Technician }, "correct-horse-battery");
+            }
+        }
+
         using var client = factory.CreateClient();
 
-        var wrong = await client.PostAsJsonAsync("/api/field/sign-in", new FieldSignInRequest(SignedInClients.GuelphTechnician, "not-the-password", null), Ct);
+        var wrong = await client.PostAsJsonAsync("/api/field/sign-in", new FieldSignInRequest(email, "not-the-password", null), Ct);
         var dispatcher = await client.PostAsJsonAsync("/api/field/sign-in", new FieldSignInRequest(SignedInClients.GuelphDispatcher, DemoSeeder.DemoPassword, null), Ct);
 
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);

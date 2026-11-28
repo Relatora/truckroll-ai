@@ -69,11 +69,13 @@ public sealed class JobTests(TruckrollApiFactory factory)
         var (propertyId, furnaceId) = await SandrasHomeAsync();
         var date = TruckrollApiFactory.DemoToday.AddDays(3);
 
-        var responses = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => dana.PostAsJsonAsync("/api/jobs", Booking(propertyId, furnaceId, date), Ct)));
+        // Twenty at once: with "highest number plus one", enough simultaneous bookings kept
+        // colliding until one ran out of retries (#50). A counter has nothing to retry.
+        var responses = await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => dana.PostAsJsonAsync("/api/jobs", Booking(propertyId, furnaceId, date), Ct)));
         var numbers = await Task.WhenAll(responses.Select(async r => (await r.Content.ReadFromJsonAsync<JobDetail>(JsonOptions.Api, Ct))!.Number));
 
         Assert.All(responses, r => Assert.Equal(HttpStatusCode.Created, r.StatusCode));
-        Assert.Equal(5, numbers.Distinct().Count());
+        Assert.Equal(20, numbers.Distinct().Count());
     }
 
     [Fact]
