@@ -62,6 +62,9 @@ var api = builder.AddDotnetProject("api", "../Truckroll.Api/Truckroll.Api.csproj
     .WithReference(redis).WaitFor(redis)
     .WithReference(kafka).WaitFor(kafka)
     .WithEnvironment("Events__Transport", "Kafka")
+    // The technician app's web build (`npm run web` in mobile/) is served by Expo on 8081 and
+    // calls /api/field from there. Phones need no entry: they send no Origin.
+    .WithEnvironment("Field__AppOrigins__0", "http://localhost:8081")
     .WithReference(ollama)
     .WithHttpHealthCheck("/health")
     // A dashboard button that rebuilds the demo data around today (the board is date-relative).

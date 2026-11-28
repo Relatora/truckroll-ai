@@ -32,11 +32,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            mobile/package-lock.json
 
       - name: Install web dependencies
         run: npm ci
         working-directory: web
+
+      - name: Install app dependencies
+        run: npm ci
+        working-directory: mobile
 
       # Docker is available on ubuntu-latest, so the Testcontainers tests run as they do locally.
       - name: Quality gate

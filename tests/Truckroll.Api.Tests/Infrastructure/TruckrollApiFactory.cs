@@ -27,6 +27,9 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
     /// <summary>The day the test database's demo data is built around.</summary>
     public static readonly DateOnly DemoToday = new(2026, 11, 25);
 
+    /// <summary>Where the field app's web build is served from in development (Expo's port).</summary>
+    public const string FieldAppOrigin = "http://localhost:8081";
+
     // Root, so tests that need a database of their own (the seeding test) can create one.
     private readonly MySqlContainer _mysql = new MySqlBuilder("mysql:8.4")
         .WithDatabase("truckroll")
@@ -62,6 +65,9 @@ public sealed class TruckrollApiFactory : WebApplicationFactory<Program>, IAsync
         // The demo company is seeded into the test database too, pinned to one day, so tests can
         // sign in as the demo users and refer to anchor customers by name.
         builder.UseSetting("Demo:Today", DemoToday.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+
+        // The field app's web build, as the AppHost allows it locally.
+        builder.UseSetting("Field:AppOrigins:0", FieldAppOrigin);
 
         // No real models in tests. The fakes replace the provider clients, and Ollama's address
         // points at a closed port, so anything that slipped past the fakes fails fast and loudly

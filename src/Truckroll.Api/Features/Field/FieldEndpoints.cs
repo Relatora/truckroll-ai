@@ -25,6 +25,9 @@ public static class FieldEndpoints
     /// <summary>The policy on everything but sign-in: a personal token, held by a technician.</summary>
     public const string Policy = AccessServiceExtensions.FieldAppPolicy;
 
+    /// <summary>The CORS policy for the app's web build (configured in Program.cs from <c>Field:AppOrigins</c>).</summary>
+    public const string CorsPolicy = "FieldAppOrigins";
+
     /// <summary>How much service history comes down with each job.</summary>
     internal const int HistoryPerJob = 5;
 
@@ -33,7 +36,7 @@ public static class FieldEndpoints
 
     public static IEndpointRouteBuilder MapFieldEndpoints(this IEndpointRouteBuilder routes)
     {
-        var field = routes.MapGroup("/field").WithTags("Field app");
+        var field = routes.MapGroup("/field").WithTags("Field app").RequireCors(CorsPolicy);
 
         field.MapPost("/sign-in", SignInAsync).AllowAnonymous()
             .WithSummary("A technician signs the app in and gets a device token, shown once.");
