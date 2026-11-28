@@ -34,7 +34,7 @@ for better answers, but nothing depends on it.
 | Concern        | Choice                                                    | Notes                                                                                                                |
 | -------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Runtime        | .NET 10 (LTS)                                             | Not .NET 11, which is a two-year release. A CRM outlives an STS (ADR-001)                                            |
-| API            | ASP.NET Core 10, minimal APIs, feature folders            | One deployable, split by feature. Kafka arrives in v0.2 (ADR-005)                                                    |
+| API            | ASP.NET Core 10, minimal APIs, feature folders            | One deployable, split by feature. Job events go through an outbox to Kafka (ADR-005, ADR-009)                       |
 | Data           | EF Core 10 + MySQL 8.4 LTS                                | Provider: `Microting.EntityFrameworkCore.MySql`, the maintained continuation of Pomelo (ADR-002)                     |
 | Retrieval      | Redis 8 Query Engine via NRedisStack                      | MySQL Community has no vector search. Redis 8 does, and it's already the cache (ADR-003)                             |
 | Real time      | SignalR                                                   | The dispatch board. Assistant answers stream over server-sent events                                                 |
