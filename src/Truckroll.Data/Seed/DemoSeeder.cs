@@ -41,6 +41,9 @@ public static class DemoSeeder
         db.Users.AddRange(DemoUsers.Create(data));
 
         await db.SaveChangesAsync(cancellationToken);
+
+        // The generator numbered the jobs itself, so the next booking's number has to come after them.
+        await JobNumbers.CatchUpAsync(db, cancellationToken);
         return true;
     }
 }

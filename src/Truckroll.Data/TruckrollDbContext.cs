@@ -38,6 +38,7 @@ public class TruckrollDbContext(DbContextOptions<TruckrollDbContext> options) : 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
     public DbSet<FieldChange> FieldChanges => Set<FieldChange>();
+    public DbSet<Counter> Counters => Set<Counter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

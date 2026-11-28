@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 using Truckroll.Api.Access;
 using Truckroll.Api.Common;
 using Truckroll.Api.Data;
@@ -148,7 +149,7 @@ public static class JobEndpoints
     // ------------------------------------------------------------------ booking
 
     internal static async Task<Results<Created<JobDetail>, ValidationProblem, ForbidHttpResult>> BookAsync(
-        BookJobRequest request, AccessScope scope, TruckrollDbContext db, CompanyClock clock, IJobEvents events, CancellationToken cancellationToken)
+        BookJobRequest request, AccessScope scope, TruckrollDbContext db, MySqlDataSource numbers, CompanyClock clock, IJobEvents events, CancellationToken cancellationToken)
     {
         if (!scope.CanBookJobs)
         {
@@ -214,40 +215,18 @@ public static class JobEndpoints
         };
         db.Add(job);
 
+        // The number comes from the database's counter, on a connection of its own, so bookings at
+        // the same moment get different numbers on the first try (JobNumbers, #50). If this
+        // booking rolls back, its number goes unused; numbers are unique, not gapless.
+        job.Number = await JobNumbers.NextAsync(numbers, cancellationToken);
+
         // The job and its "booked" event commit together. Approving a call books inside its own,
         // bigger transaction; then this joins that one, and the call decides when to commit.
-        //
-        // Bookings at the same instant can pick the same number; the unique index catches it and
-        // we try the next one, with a little random jitter so clashing requests don't retry in
-        // lockstep. When this booking owns its transaction, each try gets a fresh one: in MySQL a
-        // duplicate-key error inside a transaction leaves a shared lock on the key, concurrent
-        // retries then deadlock, and InnoDB kills the loser's whole transaction (found by the
-        // five-bookings-at-once test).
-        string? collided = null;
-        for (var attempt = 1; ; attempt++)
+        await using (var work = await db.BeginOrJoinTransactionAsync(cancellationToken))
         {
-            await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
-            // Past the number that just collided: it may belong to a booking not yet committed,
-            // which the highest-number query can't see (JobNumbers.NextAsync).
-            job.Number = await JobNumbers.NextAsync(db, cancellationToken, collided);
-            try
-            {
-                await db.SaveChangesAsync(cancellationToken);
-                await events.PublishAsync(Changed(job, "booked", scope), cancellationToken);
-                await work.CommitAsync(cancellationToken);
-                break;
-            }
-            catch (DbUpdateException) when (attempt < 6)
-            {
-                collided = job.Number;
-                if (work.Owned)
-                {
-                    await work.RollbackAsync(cancellationToken);
-                    ForgetUnsaved(db, job);
-                }
-
-                await Task.Delay(Random.Shared.Next(5, 25 * attempt), cancellationToken);
-            }
+            await db.SaveChangesAsync(cancellationToken);
+            await events.PublishAsync(Changed(job, "booked", scope), cancellationToken);
+            await work.CommitAsync(cancellationToken);
         }
 
         var saved = await LoadAsync(job.Id, scope, db, cancellationToken);
@@ -336,24 +315,6 @@ public static class JobEndpoints
     }
 
     // ------------------------------------------------------------------ helpers
-
-    /// <summary>
-    /// After a rollback, puts the context back to "nothing saved yet": the job to insert again, and
-    /// no half-written outbox row left to slip into the next try as a duplicate event.
-    /// </summary>
-    private static void ForgetUnsaved(TruckrollDbContext db, Job job)
-    {
-        foreach (var entry in db.ChangeTracker.Entries<OutboxMessage>().ToList())
-        {
-            entry.State = EntityState.Detached;
-        }
-
-        if (db.Entry(job).State != EntityState.Added)
-        {
-            job.Id = 0;
-            db.Entry(job).State = EntityState.Added;
-        }
-    }
 
     private static JobChanged Changed(Job job, string change, AccessScope scope) =>
         new(job.Id, job.Number, job.BranchId, job.Status, job.TechnicianId, change, scope.DisplayName, DateTimeOffset.UtcNow);

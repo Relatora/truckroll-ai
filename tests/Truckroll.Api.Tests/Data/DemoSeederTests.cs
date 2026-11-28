@@ -32,5 +32,9 @@ public sealed class DemoSeederTests(TruckrollApiFactory factory)
         Assert.Equal(5, await db.Branches.CountAsync(ct));
         Assert.Equal(22, await db.KnowledgeDocuments.CountAsync(ct));
         Assert.True(await db.JobNotes.CountAsync(ct) > 500);
+
+        // The seeder numbers its own jobs; the counter has to carry on after the last of them.
+        var highest = (await db.Jobs.Select(j => j.Number).ToListAsync(ct)).Max(n => long.Parse(n[2..], System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(highest, await db.Counters.Where(c => c.Name == JobNumbers.CounterName).Select(c => c.Value).SingleAsync(ct));
     }
 }
