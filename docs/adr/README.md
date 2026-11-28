@@ -16,6 +16,7 @@ that's a sign we owe an ADR.
 | [008](008-aspire-for-local-orchestration.md)        | Use Aspire to run the stack locally                                         | Accepted |
 | [009](009-one-topic-at-least-once.md)               | Send job events on one Kafka topic keyed by job, at least once, to idempotent consumers | Accepted |
 | [010](010-opentelemetry-to-datadog-agent.md)       | Send OpenTelemetry to the Datadog Agent, not the Datadog .NET tracer        | Accepted |
+| [011](011-offline-changes-office-wins-on-assignment.md) | Sync offline changes as idempotent commands; the office wins on assignment | Accepted |
 
 New ADRs start from [the template](000-template.md) and add a row here. Never edit an accepted
 ADR's decision. Write a new one that supersedes it, so the history stays readable.

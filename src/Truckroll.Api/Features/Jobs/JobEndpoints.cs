@@ -223,10 +223,13 @@ public static class JobEndpoints
         // duplicate-key error inside a transaction leaves a shared lock on the key, concurrent
         // retries then deadlock, and InnoDB kills the loser's whole transaction (found by the
         // five-bookings-at-once test).
+        string? collided = null;
         for (var attempt = 1; ; attempt++)
         {
             await using var work = await db.BeginOrJoinTransactionAsync(cancellationToken);
-            job.Number = await JobNumbers.NextAsync(db, cancellationToken);
+            // Past the number that just collided: it may belong to a booking not yet committed,
+            // which the highest-number query can't see (JobNumbers.NextAsync).
+            job.Number = await JobNumbers.NextAsync(db, cancellationToken, collided);
             try
             {
                 await db.SaveChangesAsync(cancellationToken);
@@ -236,6 +239,7 @@ public static class JobEndpoints
             }
             catch (DbUpdateException) when (attempt < 6)
             {
+                collided = job.Number;
                 if (work.Owned)
                 {
                     await work.RollbackAsync(cancellationToken);

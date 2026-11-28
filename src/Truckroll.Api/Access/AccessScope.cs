@@ -126,6 +126,29 @@ public sealed class AccessScope
         _ => db.Jobs.Where(_ => false),
     };
 
+    /// <summary>
+    /// Past work at homes the user may see, whoever did it. A technician standing at a furnace
+    /// needs to know the last tech replaced its ignitor, even though that job was never theirs.
+    /// Callers show what was done (summary, resolution, dates), not what it cost.
+    /// </summary>
+    public IQueryable<Job> ServiceHistory(TruckrollDbContext db)
+    {
+        var properties = Properties(db).Select(p => p.Id);
+        return db.Jobs.Where(j => properties.Contains(j.PropertyId));
+    }
+
+    /// <summary>
+    /// Jobs in a technician's own branch, for one purpose: explaining why a change made offline
+    /// didn't apply ("J-24051 is with Nadia now"). By then the job is no longer theirs, so
+    /// <see cref="Jobs"/> can't find it. Callers read its status and technician, never the
+    /// customer. Office roles already see their branch through <see cref="Jobs"/>.
+    /// </summary>
+    public IQueryable<Job> JobsToExplain(TruckrollDbContext db) => Role switch
+    {
+        UserRole.Technician when BranchId is { } branch => db.Jobs.Where(j => j.BranchId == branch),
+        _ => Jobs(db),
+    };
+
     /// <summary>Homes belonging to customers the user may see.</summary>
     public IQueryable<Property> Properties(TruckrollDbContext db)
     {
