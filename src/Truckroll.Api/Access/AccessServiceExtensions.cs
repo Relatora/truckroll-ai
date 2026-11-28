@@ -12,6 +12,9 @@ public static class AccessServiceExtensions
     /// <summary>The sign-in cookie's name. The web app's proxy checks for it to redirect early.</summary>
     public const string CookieName = "truckroll.auth";
 
+    /// <summary>The authorization policy for the technician app's endpoints (/api/field).</summary>
+    public const string FieldAppPolicy = "FieldApp";
+
     public static IServiceCollection AddTruckrollAccess(this IServiceCollection services)
     {
         // The browser signs in with a cookie; AI clients use a personal token (MCP only).
@@ -65,11 +68,20 @@ public static class AccessServiceExtensions
         services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
 
         services.AddAuthorization(options =>
+        {
             // /mcp takes tokens and only tokens: a browser cookie can't drive it, and a token
             // can't open the web app (whose endpoints use the default, cookie, scheme).
             options.AddPolicy(PersonalTokenHandler.SchemeName, policy => policy
                 .AddAuthenticationSchemes(PersonalTokenHandler.SchemeName)
-                .RequireAuthenticatedUser()));
+                .RequireAuthenticatedUser());
+
+            // The field app: a token too (a phone keeps no cookie jar worth trusting), and only a
+            // technician's. Office roles have no "day" to work offline.
+            options.AddPolicy(FieldAppPolicy, policy => policy
+                .AddAuthenticationSchemes(PersonalTokenHandler.SchemeName)
+                .RequireAuthenticatedUser()
+                .RequireRole(nameof(UserRole.Technician)));
+        });
         services.AddHttpContextAccessor();
         services.AddScoped(provider =>
         {

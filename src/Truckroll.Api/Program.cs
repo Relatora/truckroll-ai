@@ -13,6 +13,7 @@ using Truckroll.Api.Features.Dashboard;
 using Truckroll.Api.Features.Dev;
 using Truckroll.Api.Features.Dispatch;
 using Truckroll.Api.Features.Dispatch.Suggestions;
+using Truckroll.Api.Features.Field;
 using Truckroll.Api.Features.Jobs;
 using Truckroll.Api.Features.Mcp;
 using Truckroll.Api.Features.Notifications;
@@ -85,6 +86,9 @@ var api = app.MapGroup("/api");
 api.MapStatusEndpoints();
 api.MapAuthEndpoints();
 api.MapDevEndpoints(app.Environment);
+
+// The technician app: a token, not a cookie, and technicians only (docs/adr/011).
+api.MapFieldEndpoints();
 
 // CRM data: signed-in users only, and every query inside goes through AccessScope.
 var crm = api.MapGroup("").RequireAuthorization();

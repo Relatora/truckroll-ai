@@ -267,7 +267,7 @@ rewrites its page in `evals/`.
 ./scripts/ci.ps1     # or ./scripts/ci.sh
 ```
 
-`dotnet format`, a Release build with warnings as errors, 243 xUnit tests against real MySQL and
+`dotnet format`, a Release build with warnings as errors, 266 xUnit tests against real MySQL and
 Redis in Testcontainers, ESLint, `tsc` and a production `next build`. Tests never call a real
 model: a scripted fake chat client and a hashing embedder stand in. GitHub Actions is locked on
 this account, so the gate runs locally before every merge; the workflow in `.github/workflows`
